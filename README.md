@@ -52,7 +52,7 @@ The solution follows **Clean Architecture / Explicit Architecture** principles, 
 
 ## 🛠 Tech Stack
 
-* **Framework:** ASP.NET Core (.NET 8 / .NET 9)
+* **Framework:** ASP.NET Core (.NET 10 )
 * **Language:** C# 12
 * **ORM:** Entity Framework Core (EF Core)
 * **Database:** SQLite (Default for rapid local/Codespaces demo) / PostgreSQL-ready

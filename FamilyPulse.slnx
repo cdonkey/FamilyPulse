@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/FamilyPulse.Api/FamilyPulse.Api.csproj" />
+    <Project Path="src/FamilyPulse.Application/FamilyPulse.Application.csproj" />
+    <Project Path="src/FamilyPulse.Domain/FamilyPulse.Domain.csproj" />
+    <Project Path="src/FamilyPulse.Infrastructure/FamilyPulse.Infrastructure.csproj" />
+  </Folder>
+</Solution>
