@@ -5,4 +5,7 @@
     <Project Path="src/FamilyPulse.Domain/FamilyPulse.Domain.csproj" />
     <Project Path="src/FamilyPulse.Infrastructure/FamilyPulse.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/FamilyPulse.Application.Tests/FamilyPulse.Application.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using FamilyPulse.Application.Dtos;
 using FamilyPulse.Application.Services;
 using FamilyPulse.Domain.Entities;
@@ -6,6 +7,12 @@ using Microsoft.EntityFrameworkCore;
 using FamilyPulse.Application.Common.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
+
+//JSON Serializer to display Enums as string names
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
 
 // 1. Register OpenAPI / Swagger Services
 builder.Services.AddEndpointsApiExplorer();
@@ -27,6 +34,9 @@ builder.Services.AddScoped<IAppDbContext>(provider =>
 
 
 // 3. Register Application Layer Services
+builder.Services.AddScoped<HarmonyService>();
+
+builder.Services.AddSingleton<ICoachingService, SemanticKernelCoachingService>();
 builder.Services.AddScoped<HarmonyService>();
 
 
@@ -89,23 +99,18 @@ app.MapPost("/api/ratings", async (CreateRatingDto dto, AppDbContext db, Cancell
 .WithName("CreateRating")
 .WithTags("Ratings");
 
-// GET /api/reports/annual-harmony - Compute 12-month domain summaries via LINQ
+// GET /api/reports/annual-harmony
 app.MapGet("/api/reports/annual-harmony", async (HarmonyService harmonyService, CancellationToken ct) =>
 {
-    var domainSummaries = await harmonyService.GetAnnualDomainSummariesAsync(ct);
-
-    var report = new AnnualHarmonyReportDto(
-        FamilyId: Guid.NewGuid(),
-        GeneratedAtUtc: DateTime.UtcNow,
-        DomainSummaries: domainSummaries,
-        AiCoachingAdvice: "Initial baseline established: Marriage and Education domains display strong baseline harmony (+3.2 avg). Recommend focusing upcoming check-ins on balancing Activities and Financial alignment."
-    );
-
+    var report = await harmonyService.GetAnnualHarmonyReportAsync(ct);
     return Results.Ok(report);
 })
 .WithName("GetAnnualHarmonyReport")
 .WithTags("Reports");
 
+
 app.MapGet("/", () => Results.Redirect("/swagger"));
+
+
 
 app.Run();

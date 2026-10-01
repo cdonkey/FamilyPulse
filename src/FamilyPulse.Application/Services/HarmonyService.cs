@@ -11,19 +11,20 @@ namespace FamilyPulse.Application.Services;
 public class HarmonyService
 {
     private readonly IAppDbContext _db;
+    private readonly ICoachingService _coachingService;
     
 
-    public HarmonyService(IAppDbContext db)
+    public HarmonyService(IAppDbContext db, ICoachingService coachingService)
     {
         _db = db;
+        _coachingService = coachingService;
     }
 
-    public async Task<List<DomainHarmonySummaryDto>> GetAnnualDomainSummariesAsync(CancellationToken cancellationToken = default)
+public async Task<AnnualHarmonyReportDto> GetAnnualHarmonyReportAsync(CancellationToken cancellationToken = default)
     {
         var oneYearAgo = DateTime.UtcNow.AddYears(-1);
 
-        // Read-optimized LINQ query with AsNoTracking
-        return await _db.Set<Rating>()
+        var domainSummaries = await _db.Ratings
             .AsNoTracking()
             .Where(r => r.CreatedAtUtc >= oneYearAgo)
             .GroupBy(r => r.Category)
@@ -33,5 +34,14 @@ public class HarmonyService
                 g.Count()
             ))
             .ToListAsync(cancellationToken);
+
+        var aiAdvice = await _coachingService.GenerateCoachingAdviceAsync(domainSummaries, cancellationToken);
+
+        return new AnnualHarmonyReportDto(
+            FamilyId: Guid.NewGuid(),
+            GeneratedAtUtc: DateTime.UtcNow,
+            DomainSummaries: domainSummaries,
+            AiCoachingAdvice: aiAdvice
+        );
     }
 }
