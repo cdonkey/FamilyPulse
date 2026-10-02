@@ -5,6 +5,10 @@ using FamilyPulse.Domain.Entities;
 using FamilyPulse.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using FamilyPulse.Application.Common.Interfaces;
+using Microsoft.AspNetCore.Mvc;
+using System.Runtime.CompilerServices;
+using System.Net.ServerSentEvents;
+using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -37,6 +41,7 @@ builder.Services.AddScoped<IAppDbContext>(provider =>
 builder.Services.AddScoped<HarmonyService>();
 
 builder.Services.AddSingleton<ICoachingService, SemanticKernelCoachingService>();
+
 builder.Services.AddScoped<HarmonyService>();
 
 
@@ -107,6 +112,45 @@ app.MapGet("/api/reports/annual-harmony", async (HarmonyService harmonyService, 
 })
 .WithName("GetAnnualHarmonyReport")
 .WithTags("Reports");
+
+
+
+
+
+app.MapGet("/api/coaching/advice/stream", (
+    [FromServices] HarmonyService harmonyService,
+    [FromServices] ICoachingService coachingService,
+    [FromQuery] Guid familyId,
+    CancellationToken ct) =>
+{
+    // Delegate to a local generator function to allow 'yield return'
+    return StreamAdviceCoreAsync(harmonyService, coachingService, familyId, ct);
+
+    static async IAsyncEnumerable<SseItem<string>> StreamAdviceCoreAsync(
+        HarmonyService harmonyService,
+        ICoachingService coachingService,
+        Guid familyId,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        // 1. Fetch the report (using existing implemented method)
+        var report = await harmonyService.GetAnnualHarmonyReportAsync(cancellationToken);
+
+        // 2. (Optional) Stream the initial report metadata as the first SSE event
+        var reportJson = JsonSerializer.Serialize(report);
+        yield return new SseItem<string>(reportJson, eventType: "report-data");
+
+        // 3. Stream the AI coaching tokens chunk-by-chunk
+        await foreach (var token in coachingService.StreamCoachingAdviceAsync(report.DomainSummaries, cancellationToken))
+        {
+            yield return new SseItem<string>(token, eventType: "coaching-token");
+        }
+    }
+})
+.WithName("StreamCoachingAdvice");
+
+
+
+
 
 
 app.MapGet("/", () => Results.Redirect("/swagger"));

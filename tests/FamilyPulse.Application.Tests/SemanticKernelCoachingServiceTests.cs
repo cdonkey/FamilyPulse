@@ -23,10 +23,13 @@ public class SemanticKernelCoachingServiceTests
 
         // Act
         var result = await coachingService.GenerateCoachingAdviceAsync(summaries);
+        
 
         // Assert
-        result.Should().StartWith("[Mock AI Coaching]");
-        result.Should().Contain("Marriage (+3.5)");
-        result.Should().Contain("Financial (-1.2)");
+       Assert.StartsWith("[Mock AI Coaching]", result);
+       Assert.Contains("Marriage", result);
+       Assert.Contains("+3.50", result);
+       Assert.Contains("Financial", result);
+       Assert.Contains("-1.20", result);
     }
 }

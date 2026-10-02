@@ -3,6 +3,9 @@ using FamilyPulse.Application.Common.Interfaces;
 using FamilyPulse.Application.Dtos;
 using Microsoft.Extensions.Configuration;
 using Microsoft.SemanticKernel;
+using Microsoft.SemanticKernel.Connectors.OpenAI;
+using System.Runtime.CompilerServices;
+using System.Globalization;
 
 namespace FamilyPulse.Application.Services;
 
@@ -10,6 +13,40 @@ public class SemanticKernelCoachingService : ICoachingService
 {
     private readonly Kernel? _kernel;
     private readonly bool _isConfigured;
+
+    public String PromptTemplate()
+    {
+       return  """
+            <message role="system">
+            You are FamilyPulse AI, an expert systemic family therapist and organizational dynamics analyst.
+            Your task is to analyze 12-month family telemetry data and produce a structured, actionable harmony report.
+
+            DOMAIN CONTEXT & SCALING RULES:
+            - Scale: -5.0 (High Tension/Crisis) to +5.0 (High Synergy/Flow). 0.0 is baseline neutral.
+            - Focus on cross-domain interaction: Explain how high-performing domains can buffer against low-scoring domains.
+            - Do not treat domains in isolation; search for root causes and ripple effects.
+            - Keep the tone compassionate, direct, and practical.
+            </message>
+
+            <message role="user">
+            Analyze the following 12-month family telemetry summary:
+
+            {{$telemetryData}}
+
+            Provide a structured coaching report strictly formatted in Markdown with these exact section headers:
+
+            ### 1. Systemic Diagnosis
+            A concise 2-sentence summary evaluating the family's current overall equilibrium.
+
+            ### 2. Multiplier Dynamics
+            - **Primary Anchor:** Identify the highest-scoring domain and explain how the family can leverage it as a emotional stabilizer.
+            - **Friction Vector:** Identify the lowest-scoring domain and describe how unresolved tension here might spill over into other family domains.
+
+            ### 3. Weekly Micro-Habit
+            Provide ONE concrete, low-friction, non-confrontational action item or discussion prompt for this week's family meeting.
+            </message>
+            """;
+    }
 
     public SemanticKernelCoachingService(IConfiguration configuration)
     {
@@ -25,37 +62,112 @@ public class SemanticKernelCoachingService : ICoachingService
         }
     }
 
-    public async Task<string> GenerateCoachingAdviceAsync(List<DomainHarmonySummaryDto> domainSummaries, CancellationToken ct = default)
+public async IAsyncEnumerable<string> StreamCoachingAdviceAsync(
+        List<DomainHarmonySummaryDto> domainSummaries,
+        [EnumeratorCancellation] CancellationToken ct = default)
     {
-        // Fallback for local development when no OpenAI API key is supplied
+        // 1. Mock Fallback Mode (Simulates SSE stream word by word)
         if (!_isConfigured || _kernel == null)
         {
-            var lowestDomain = domainSummaries.OrderBy(s => s.AverageScore).FirstOrDefault();
-            var highestDomain = domainSummaries.OrderByDescending(s => s.AverageScore).FirstOrDefault();
+            var lowestDomain = domainSummaries.OrderBy(s => s.AverageScore).ThenBy(s => s.Category.ToString()).FirstOrDefault();
+            var highestDomain = domainSummaries.OrderByDescending(s => s.AverageScore).ThenBy(s => s.Category.ToString()).FirstOrDefault();
 
-            return $"[Mock AI Coaching]: Highest harmony observed in {highestDomain?.Category} (+{highestDomain?.AverageScore}). " +
-                   $"Focus next check-in on {lowestDomain?.Category} ({lowestDomain?.AverageScore}), which shows elevated friction points.";
+            var highestScoreFormatted = highestDomain?.AverageScore.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture) ?? "+0.00";
+            var lowestScoreFormatted = lowestDomain?.AverageScore.ToString("+0.00;-0.00;0.00", CultureInfo.InvariantCulture) ?? "-0.00";
+
+            var mockText = $"[Mock AI Coaching]: Highest harmony observed in {highestDomain?.Category} ({highestScoreFormatted}). Focus next check-in on {lowestDomain?.Category} ({lowestScoreFormatted}), which shows elevated friction points.";
+
+            foreach (var word in mockText.Split(' '))
+            {
+                ct.ThrowIfCancellationRequested();
+                yield return word + " ";
+                await Task.Delay(50, ct); // Simulated network/LLM latency
+            }
+            yield break;
         }
 
-        // Format telemetry context into prompt template
+        // 2. Real OpenAI / Semantic Kernel Stream
+   
+        // 1. Format raw telemetry with contextual descriptions
         var summaryText = new StringBuilder();
         foreach (var summary in domainSummaries)
         {
-            summaryText.AppendLine($"- {summary.Category}: Average Score = {summary.AverageScore} across {summary.TotalRatings} check-ins.");
+            summaryText.AppendLine($"- Domain: {summary.Category}");
+            summaryText.AppendLine($"  Average Harmony Score: {summary.AverageScore:F2} (Scale: -5.0 High Friction to +5.0 High Harmony)");
+            summaryText.AppendLine($"  Logged Check-ins: {summary.TotalRatings}");
         }
 
-        var promptTemplate = """
-            You are FamilyPulse AI, an empathetic and analytical family harmony coach.
-            Analyze the following 12-month family domain telemetry data where scores range from -5 (high friction) to +5 (high harmony):
+        // 2. Multi-role prompt template with systemic analysis instructions
+        var promptTemplate = PromptTemplate();
 
-            {{$telemetryData}}
+        // 3. Configure low temperature for deterministic, consistent advice
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = 0.3,
+            MaxTokens = 600
+        };
 
-            Provide a concise 2-sentence coaching insight:
-            1. Highlight the strongest domain of alignment.
-            2. Provide one actionable recommendation for addressing the lowest-scoring domain.
-            """;
+        var arguments = new KernelArguments(executionSettings)
+        {
+            ["telemetryData"] = summaryText.ToString()
+        };
 
-        var arguments = new KernelArguments
+
+        var streamingResult = _kernel.InvokePromptStreamingAsync(promptTemplate, cancellationToken: ct);
+
+        await foreach (var chunk in streamingResult.WithCancellation(ct))
+        {
+           var text = chunk.ToString();
+           if (!string.IsNullOrEmpty(text))
+           {
+              yield return text;
+           }        
+        }
+}
+
+    public async Task<string> GenerateCoachingAdviceAsync(List<DomainHarmonySummaryDto> domainSummaries,
+     CancellationToken ct = default)
+    {
+        if (!_isConfigured || _kernel == null)
+    {
+        // 1. Secondary sort by Category guarantees identical tie-breaking every time
+        var lowestDomain = domainSummaries
+            .OrderBy(s => s.AverageScore)
+            .ThenBy(s => s.Category.ToString())
+            .FirstOrDefault();
+
+        var highestDomain = domainSummaries
+            .OrderByDescending(s => s.AverageScore)
+            .ThenBy(s => s.Category.ToString())
+            .FirstOrDefault();
+
+        // 2. Format scores deterministically (+2.38, -0.90, +0.00)
+        var highestScoreFormatted = highestDomain?.AverageScore.ToString("+0.00;-0.00;0.00", System.Globalization.CultureInfo.InvariantCulture) ?? "+0.00";
+        var lowestScoreFormatted = lowestDomain?.AverageScore.ToString("+0.00;-0.00;0.00", System.Globalization.CultureInfo.InvariantCulture) ?? "-0.00";
+
+        return System.FormattableString.Invariant(
+            $"[Mock AI Coaching]: Highest harmony observed in {highestDomain?.Category} ({highestScoreFormatted}). Focus next check-in on {lowestDomain?.Category} ({lowestScoreFormatted}), which shows elevated friction points."
+        );
+    }
+        // 1. Format raw telemetry with contextual descriptions
+        var summaryText = new StringBuilder();
+        foreach (var summary in domainSummaries)
+        {
+            summaryText.AppendLine($"- Domain: {summary.Category}");
+            summaryText.AppendLine($"  Average Harmony Score: {summary.AverageScore:F2} (Scale: -5.0 High Friction to +5.0 High Harmony)");
+            summaryText.AppendLine($"  Logged Check-ins: {summary.TotalRatings}");
+        }
+
+        // 2. Multi-role prompt template with systemic analysis instructions
+        var promptTemplate = PromptTemplate();
+        // 3. Configure low temperature for deterministic, consistent advice
+        var executionSettings = new OpenAIPromptExecutionSettings
+        {
+            Temperature = 0.3,
+            MaxTokens = 600
+        };
+
+        var arguments = new KernelArguments(executionSettings)
         {
             ["telemetryData"] = summaryText.ToString()
         };
