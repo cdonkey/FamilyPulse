@@ -48,19 +48,44 @@ public class SemanticKernelCoachingService : ICoachingService
             """;
     }
 
-    public SemanticKernelCoachingService(IConfiguration configuration)
-    {
-        var apiKey = configuration["OpenAI:ApiKey"] ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY");
-        var modelId = configuration["OpenAI:ModelId"] ?? "gpt-4o-mini";
 
-        if (!string.IsNullOrWhiteSpace(apiKey))
+public SemanticKernelCoachingService(IConfiguration configuration)
+    {
+        var apiKey = configuration["OpenAI:ApiKey"]  ?? "key_placeholder";
+        var modelId = configuration["OpenAI:ModelId"] ?? "llama-3.3-70b-versatile";
+        var openAiEndpoint = configuration["OpenAI:Endpoint"];
+
+        // 1. Check if a valid API key exists (ignoring placeholders)
+        _isConfigured = !string.IsNullOrWhiteSpace(apiKey) && apiKey != "key_placeholder";
+
+        if (_isConfigured)
         {
-            var builder = Kernel.CreateBuilder();
-            builder.AddOpenAIChatCompletion(modelId, apiKey);
-            _kernel = builder.Build();
-            _isConfigured = true;
+            var kernelBuilder = Kernel.CreateBuilder();
+
+            if (!string.IsNullOrWhiteSpace(openAiEndpoint) && Uri.TryCreate(openAiEndpoint, UriKind.Absolute, out var endpointUri))
+            {
+                // Custom provider (Groq / OpenRouter / Local Ollama)
+                kernelBuilder.AddOpenAIChatCompletion(
+                    modelId: modelId,
+                    apiKey: apiKey!,
+                    endpoint: endpointUri
+                );
+            }
+            else
+            {
+                // Direct OpenAI
+                kernelBuilder.AddOpenAIChatCompletion(
+                    modelId: modelId,
+                    apiKey: apiKey!
+                );
+            }
+
+            // 2. Build and store the Kernel instance
+            _kernel = kernelBuilder.Build();
         }
     }
+
+  
 
 public async IAsyncEnumerable<string> StreamCoachingAdviceAsync(
         List<DomainHarmonySummaryDto> domainSummaries,
