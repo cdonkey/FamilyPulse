@@ -8,15 +8,25 @@ public static class DataSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
-        if (await db.Members.AnyAsync()) return; // Database already seeded
 
-        var dad = new Member("Alex", "Parent");
-        var mom = new Member("Sarah", "Parent");
-        var child = new Member("Leo", "Child");
+       if (!await db.FamilyAccounts.AnyAsync())
+       {
+            // Seed Hash corresponding to passphrase + landmark demo seed
+            var demoAccount = new FamilyAccount("DEMO_SEED_IDENTITY_HASH_123456789");
+            await db.FamilyAccounts.AddAsync(demoAccount);
+            await db.SaveChangesAsync();
 
-        await db.Members.AddRangeAsync(dad, mom, child);
 
-        var ratings = new List<Rating>();
+            if (await db.Members.AnyAsync()) return; // Database already seeded
+
+             var dad = new Member(demoAccount.Id, "Alex", "Parent");
+             var mom = new Member(demoAccount.Id, "Sarah", "Parent");
+             var child = new Member(demoAccount.Id, "Leo", "Child");
+
+             await db.Members.AddRangeAsync(dad, mom, child);
+
+
+               var ratings = new List<Rating>();
         var random = new Random(42); // Fixed seed for reproducible benchmarks
         var now = DateTime.UtcNow;
 
@@ -50,5 +60,16 @@ public static class DataSeeder
 
         await db.Ratings.AddRangeAsync(ratings);
         await db.SaveChangesAsync();
+
+
+
+
+
+
+        }  
+
+        
+       
+      
     }
 }

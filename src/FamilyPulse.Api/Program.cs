@@ -5,10 +5,13 @@ using FamilyPulse.Domain.Entities;
 using FamilyPulse.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using FamilyPulse.Application.Common.Interfaces;
+using FamilyPulse.Infrastructure.Security;
 using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 using System.Net.ServerSentEvents;
 using System.Text.Json;
+
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +46,9 @@ builder.Services.AddScoped<HarmonyService>();
 builder.Services.AddSingleton<ICoachingService, SemanticKernelCoachingService>();
 
 builder.Services.AddScoped<HarmonyService>();
+
+builder.Services.AddSingleton<IIdentityHasher, Pbkdf2IdentityHasher>();
+builder.Services.AddSingleton<IHouseKeyService, HouseKeyService>();
 
 
 

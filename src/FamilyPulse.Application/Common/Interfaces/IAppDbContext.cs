@@ -7,6 +7,7 @@ public interface IAppDbContext
 {
     DbSet<Member> Members { get; }
     DbSet<Rating> Ratings { get; }
+    DbSet<FamilyAccount> FamilyAccounts { get; }
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     DbSet<TEntity> Set<TEntity>() where TEntity : class;
 }
