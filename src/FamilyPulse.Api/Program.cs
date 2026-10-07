@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Mvc;
 using System.Runtime.CompilerServices;
 using System.Net.ServerSentEvents;
 using System.Text.Json;
+using FamilyPulse.Application.Identity.Services;
+using FamilyPulse.Api.Endpoints;
 
 
 
@@ -51,6 +53,10 @@ builder.Services.AddSingleton<IIdentityHasher, Pbkdf2IdentityHasher>();
 builder.Services.AddSingleton<IHouseKeyService, HouseKeyService>();
 
 
+builder.Services.AddTransient<IPassphraseGenerator, PassphraseGenerator>();
+builder.Services.AddScoped<IIdentityService, IdentityService>();
+
+
 
 var app = builder.Build();
 
@@ -65,9 +71,16 @@ if (app.Environment.IsDevelopment())
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.EnsureCreatedAsync();
+    //await db.Database.EnsureCreatedAsync();
+
+    await db.Database.MigrateAsync();
     await DataSeeder.SeedAsync(db);
 }
+
+
+app.UseDefaultFiles(); // Serves wwwroot/index.html automatically at http://localhost:5000/
+app.UseStaticFiles();
+app.MapIdentityEndpoints();
 
 // 5. Minimal API Endpoints
 

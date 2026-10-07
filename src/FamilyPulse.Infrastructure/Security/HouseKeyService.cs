@@ -2,81 +2,103 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using FamilyPulse.Application.Common.Interfaces;
-using FamilyPulse.Application.Common.Models;
 using Microsoft.Extensions.Configuration;
 
 namespace FamilyPulse.Infrastructure.Security;
 
 public class HouseKeyService : IHouseKeyService
 {
-    private readonly byte[] _signingKey;
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private readonly byte[] _hmacSecret;
 
-    public HouseKeyService(IConfiguration configuration)
+    public HouseKeyService(IConfiguration config)
     {
-        var secret = configuration["Security:HouseKeySecret"] 
-                     ?? "FamilyPulse_Default_HouseKey_Secret_ChangeInProduction_2026!";
-        _signingKey = Encoding.UTF8.GetBytes(secret);
+        // 1. Read static secret from config or fallback to dev key (prevents key changing on app restart)
+        string secret = config["Security:HouseKeySecret"] 
+            ?? "FamilyPulse_Static_HouseKey_HMAC_Secret_987654321!";
+        
+        _hmacSecret = Encoding.UTF8.GetBytes(secret);
     }
 
     public string ExportHouseKeyJson(Guid familyId)
     {
-        var issuedAt = DateTime.UtcNow;
-        const int version = 1;
+        int version = 1;
+        // ISO-8601 round-trip string
+        string issuedAtUtc = DateTime.UtcNow.ToString("O");
+        
+        string payloadToSign = CreateSignablePayload(familyId, version, issuedAtUtc);
+        string signature = ComputeHmacSignature(payloadToSign);
 
-        var signature = ComputeSignature(familyId, version, issuedAt);
-
-        var payload = new HouseKeyPayload(
+        var key = new HouseKeyExportDto(
             FamilyId: familyId,
             Version: version,
-            IssuedAtUtc: issuedAt,
+            IssuedAtUtc: issuedAtUtc,
             Signature: signature
         );
 
-        return JsonSerializer.Serialize(payload, JsonOptions);
+        return JsonSerializer.Serialize(key, new JsonSerializerOptions 
+        { 
+            WriteIndented = true 
+        });
     }
 
-    public bool TryValidateHouseKey(string jsonContent, out Guid familyId)
+    public bool TryValidateHouseKey(string houseKeyJson, out Guid familyId)
     {
         familyId = Guid.Empty;
 
-        if (string.IsNullOrWhiteSpace(jsonContent))
+        if (string.IsNullOrWhiteSpace(houseKeyJson))
             return false;
 
         try
         {
-            var payload = JsonSerializer.Deserialize<HouseKeyPayload>(jsonContent);
-            if (payload == null || string.IsNullOrWhiteSpace(payload.Signature))
-                return false;
-
-            var expectedSignature = ComputeSignature(payload.FamilyId, payload.Version, payload.IssuedAtUtc);
-
-            // Fixed-time comparison protects against side-channel timing attacks
-            var isSignatureValid = CryptographicOperations.FixedTimeEquals(
-                Encoding.UTF8.GetBytes(payload.Signature),
-                Encoding.UTF8.GetBytes(expectedSignature)
-            );
-
-            if (isSignatureValid)
+            var options = new JsonSerializerOptions
             {
-                familyId = payload.FamilyId;
-                return true;
+                PropertyNameCaseInsensitive = true
+            };
+
+            var key = JsonSerializer.Deserialize<HouseKeyExportDto>(houseKeyJson, options);
+            if (key is null || key.FamilyId == Guid.Empty || string.IsNullOrWhiteSpace(key.Signature))
+            {
+                return false;
             }
 
-            return false;
+            // 2. Re-create signable payload using exact string representation from JSON
+            string payloadToSign = CreateSignablePayload(key.FamilyId, key.Version, key.IssuedAtUtc);
+            string expectedSignature = ComputeHmacSignature(payloadToSign);
+
+            // 3. Constant-time byte comparison prevents timing attacks
+            if (!CryptographicOperations.FixedTimeEquals(
+                Encoding.UTF8.GetBytes(key.Signature),
+                Encoding.UTF8.GetBytes(expectedSignature)))
+            {
+                return false; // Signature mismatch
+            }
+
+            familyId = key.FamilyId;
+            return true;
         }
         catch
         {
-            // Invalid JSON or deserialization structure mismatch
             return false;
         }
     }
 
-    private string ComputeSignature(Guid familyId, int version, DateTime issuedAtUtc)
+    private static string CreateSignablePayload(Guid familyId, int version, string issuedAtUtc)
     {
-        var rawData = $"{familyId}:{version}:{issuedAtUtc:O}";
-        using var hmac = new HMACSHA256(_signingKey);
-        var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+        return $"{familyId}:{version}:{issuedAtUtc}";
+    }
+
+    private string ComputeHmacSignature(string payload)
+    {
+        using var hmac = new HMACSHA256(_hmacSecret);
+        byte[] hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(payload));
         return Convert.ToBase64String(hash);
     }
+
+    // Treat IssuedAtUtc as string to preserve byte-level equality
+    private record HouseKeyExportDto(
+        Guid FamilyId,
+        int Version,
+        string IssuedAtUtc,
+        string Signature
+    );
 }

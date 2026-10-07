@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FamilyPulse — Identity Console</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --primary: #38bdf8;
+      --primary-hover: #0284c7;
+      --success: #4ade80;
+      --danger: #f87171;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    .container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 1.5rem; }
+    .header { text-align: center; margin-bottom: 0.5rem; }
+    .header h1 { font-size: 1.75rem; color: var(--primary); }
+    .header p { color: var(--muted); font-size: 0.9rem; }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+    .card h2 { font-size: 1.2rem; margin-bottom: 1rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem; }
+
+    .form-group { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1rem; }
+    label { font-size: 0.85rem; color: var(--muted); }
+    input[type="text"], input[type="file"] {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 0.6rem;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+    input[type="text"]:focus { border-color: var(--primary); outline: none; }
+
+    .btn {
+      background: var(--primary);
+      color: #0f172a;
+      font-weight: 600;
+      border: none;
+      padding: 0.65rem 1.2rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: var(--primary-hover); color: #fff; }
+    .btn-secondary { background: #334155; color: var(--text); }
+    .btn-secondary:hover { background: #475569; }
+
+    .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .tab {
+      padding: 0.4rem 0.8rem;
+      background: #0f172a;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .tab.active { background: var(--primary); color: #0f172a; font-weight: 600; border-color: var(--primary); }
+
+    .result-box {
+      margin-top: 1rem;
+      padding: 1rem;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 0.85rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    .result-box.success { background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); color: var(--success); }
+    .result-box.error { background: rgba(248, 113, 113, 0.1); border: 1px solid var(--danger); color: var(--danger); }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>FamilyPulse Console</h1>
+    <p>Zero-Knowledge Identity Verification & Key Recovery Test Bench</p>
+  </div>
+
+  <!-- REGISTRATION CARD -->
+  <div class="card">
+    <h2>1. Register Anonymous Family</h2>
+    <form id="register-form">
+      <div class="form-group">
+        <label for="landmark">Virtual Landmark ID *</label>
+        <input type="text" id="landmark" placeholder="e.g. Central Park West" required>
+      </div>
+      <div class="form-group">
+        <label for="custom-passphrase">Custom 4-Word Passphrase (Optional — leave blank to auto-generate)</label>
+        <input type="text" id="custom-passphrase" placeholder="e.g. river-stone-falcon-bright">
+      </div>
+      <button type="submit" class="btn">Register Family</button>
+    </form>
+
+    <div id="register-output" class="hidden"></div>
+    <button id="download-key-btn" class="btn btn-secondary hidden" style="margin-top: 0.8rem;">
+      Download family-key.json
+    </button>
+  </div>
+
+  <!-- RECOVERY CARD -->
+  <div class="card">
+    <h2>2. Recover Family Account</h2>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('passphrase')">Via Passphrase & Landmark</button>
+      <button class="tab" onclick="switchTab('file')">Via House Key File</button>
+    </div>
+
+    <!-- Passphrase Form -->
+    <form id="recover-passphrase-form">
+      <div class="form-group">
+        <label for="rec-landmark">Virtual Landmark ID</label>
+        <input type="text" id="rec-landmark" placeholder="e.g. Central Park West" required>
+      </div>
+      <div class="form-group">
+        <label for="rec-passphrase">4-Word Passphrase</label>
+        <input type="text" id="rec-passphrase" placeholder="e.g. river-stone-falcon-bright" required>
+      </div>
+      <button type="submit" class="btn">Recover Account</button>
+    </form>
+
+    <!-- File Form -->
+    <form id="recover-file-form" class="hidden">
+      <div class="form-group">
+        <label for="housekey-file">Upload family-key.json</label>
+        <input type="file" id="housekey-file" accept=".json" required>
+      </div>
+      <button type="submit" class="btn">Upload & Verify Key</button>
+    </form>
+
+    <div id="recover-output" class="hidden"></div>
+  </div>
+</div>
+
+<script>
+  let currentHouseKeyJson = "";
+
+  // Tab Switcher
+  function switchTab(mode) {
+    const tabs = document.querySelectorAll('.tab');
+    tabs[0].classList.toggle('active', mode === 'passphrase');
+    tabs[1].classList.toggle('active', mode === 'file');
+
+    document.getElementById('recover-passphrase-form').classList.toggle('hidden', mode !== 'passphrase');
+    document.getElementById('recover-file-form').classList.toggle('hidden', mode !== 'file');
+  }
+
+
+
+
+
+
+
+
+document.getElementById('register-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const landmark = document.getElementById('landmark').value.trim();
+  const customPassphrase = document.getElementById('custom-passphrase').value.trim();
+  const output = document.getElementById('register-output');
+  const downloadBtn = document.getElementById('download-key-btn');
+
+  try {
+    const response = await fetch('/api/identity/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        virtualLandmarkId: landmark,
+        customPassphrase: customPassphrase || null
+      })
+    });
+
+    // Safely parse JSON or handle empty/text response
+    const text = await response.text();
+    let data = {};
+    try {
+      data = text ? JSON.parse(text) : {};
+    } catch {
+      data = { error: text || `HTTP ${response.status} ${response.statusText}` };
+    }
+
+    if (response.ok) {
+      currentHouseKeyJson = data.houseKeyJson;
+      output.className = 'result-box success';
+      output.textContent = `Account Registered Successfully!\n\nFamily ID: ${data.familyId}\nPassphrase: ${data.passphrase}\nLandmark:  ${data.virtualLandmarkId}`;
+      output.classList.remove('hidden');
+      downloadBtn.classList.remove('hidden');
+    } else {
+      output.className = 'result-box error';
+      output.textContent = `Registration Failed (${response.status}): ${data.error || text || response.statusText}`;
+      output.classList.remove('hidden');
+      downloadBtn.classList.add('hidden');
+    }
+  } catch (err) {
+    output.className = 'result-box error';
+    output.textContent = `Client Error: ${err.message}`;
+    output.classList.remove('hidden');
+  }
+});
+
+
+
+
+
+
+
+  // Download House Key JSON File
+  document.getElementById('download-key-btn').addEventListener('click', () => {
+    if (!currentHouseKeyJson) return;
+    const blob = new Blob([currentHouseKeyJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'family-key.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // Recover via Passphrase + Landmark
+  document.getElementById('recover-passphrase-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const landmark = document.getElementById('rec-landmark').value.trim();
+    const passphrase = document.getElementById('rec-passphrase').value.trim();
+    await performRecovery({ passphrase, virtualLandmarkId: landmark });
+  });
+
+
+
+document.getElementById('recover-file-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const fileInput = document.getElementById('housekey-file');
+  if (!fileInput.files.length) return;
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+
+  reader.onload = async (event) => {
+    let houseKeyJson = event.target.result.trim();
+
+    // Remove wrapping quotes if the file was downloaded as a raw JSON string
+    if (houseKeyJson.startsWith('"') && houseKeyJson.endsWith('"')) {
+      try {
+        houseKeyJson = JSON.parse(houseKeyJson);
+      } catch { /* keep original if unparseable */ }
+    }
+
+    await performRecovery({ houseKeyJson });
+  };
+
+  reader.readAsText(file);
+});
+
+
+
+
+  // Shared Recovery Execution
+  async function performRecovery(payload) {
+    const output = document.getElementById('recover-output');
+
+    try {
+      const response = await fetch('/api/identity/recover', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const text = await response.text();
+       let data = {};
+      try {
+         data = text ? JSON.parse(text) : {};
+      } catch {
+         data = { error: text || `HTTP ${response.status} ${response.statusText}` };
+      }
+
+      if (response.ok) {
+        output.className = 'result-box success';
+        output.textContent = `Account Authenticated & Recovered!\n\nFamily ID:      ${data.familyId}\nCreated At (UTC): ${data.createdAtUtc}\nLast Active:      ${data.lastActiveAtUtc}`;
+      } else {
+        output.className = 'result-box error';
+        output.textContent = `Recovery Failed: ${data.error || 'Invalid credentials or key file.'}`;
+      }
+      output.classList.remove('hidden');
+    } catch (err) {
+      output.className = 'result-box error';
+      output.textContent = `Network Error: ${err.message}`;
+      output.classList.remove('hidden');
+    }
+  }
+</script>
+
+</body>
+</html>
