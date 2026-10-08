@@ -12,6 +12,7 @@ using System.Net.ServerSentEvents;
 using System.Text.Json;
 using FamilyPulse.Application.Identity.Services;
 using FamilyPulse.Api.Endpoints;
+using FamilyPulse.Application.Members.Services;
 
 
 
@@ -56,6 +57,8 @@ builder.Services.AddSingleton<IHouseKeyService, HouseKeyService>();
 builder.Services.AddTransient<IPassphraseGenerator, PassphraseGenerator>();
 builder.Services.AddScoped<IIdentityService, IdentityService>();
 
+builder.Services.AddScoped<IMemberService, MemberService>();
+
 
 
 var app = builder.Build();
@@ -81,6 +84,7 @@ using (var scope = app.Services.CreateScope())
 app.UseDefaultFiles(); // Serves wwwroot/index.html automatically at http://localhost:5000/
 app.UseStaticFiles();
 app.MapIdentityEndpoints();
+app.MapMemberEndpoints(); 
 
 // 5. Minimal API Endpoints
 

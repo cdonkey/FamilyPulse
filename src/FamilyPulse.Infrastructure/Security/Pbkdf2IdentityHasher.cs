@@ -20,7 +20,7 @@ public class Pbkdf2IdentityHasher : IIdentityHasher
         _pepperBytes = Encoding.UTF8.GetBytes(pepper);
     }
 
-    public string HashIdentity(string passphrase, string virtualLandmarkId)
+  public string HashIdentity(string passphrase, string virtualLandmarkId)
     {
         if (string.IsNullOrWhiteSpace(passphrase))
             throw new ArgumentException("Passphrase cannot be empty.", nameof(passphrase));
@@ -28,11 +28,10 @@ public class Pbkdf2IdentityHasher : IIdentityHasher
         if (string.IsNullOrWhiteSpace(virtualLandmarkId))
             throw new ArgumentException("Virtual landmark ID cannot be empty.", nameof(virtualLandmarkId));
 
-        // 1. Normalize inputs to prevent formatting discrepancies (e.g., casing/whitespace)
+        // Normalize casing and trim leading/trailing whitespace
         var normalizedInput = $"{passphrase.Trim().ToLowerInvariant()}:{virtualLandmarkId.Trim().ToLowerInvariant()}";
         var inputBytes = Encoding.UTF8.GetBytes(normalizedInput);
 
-        // 2. Derive key deterministically using PBKDF2 with App Pepper as salt
         byte[] hash = Rfc2898DeriveBytes.Pbkdf2(
             inputBytes,
             _pepperBytes,
@@ -41,7 +40,6 @@ public class Pbkdf2IdentityHasher : IIdentityHasher
             KeySize
         );
 
-        // 3. Return Base64-encoded hash string
         return Convert.ToBase64String(hash);
     }
 

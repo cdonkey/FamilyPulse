@@ -105,46 +105,61 @@ public class IdentityService : IIdentityService
         );
     }
 
-    public async Task<RecoverAccountResponse?> RecoverAsync(
-        RecoverAccountQuery query, 
-        CancellationToken ct = default)
+
+
+public async Task<RecoverAccountResponse?> RecoverAsync(
+    RecoverAccountQuery query, 
+    CancellationToken ct = default)
+{
+    FamilyAccount? account = null;
+
+    // Diagnostic log: Check what C# actually received from the JSON payload
+    Console.WriteLine($"[RECOVER ATTEMPT] Passphrase: '{query.Passphrase}', Landmark: '{query.VirtualLandmarkId}', HasKeyJson: {!string.IsNullOrWhiteSpace(query.HouseKeyJson)}");
+
+    // Path A: Recovery via imported House Key JSON file
+    if (!string.IsNullOrWhiteSpace(query.HouseKeyJson))
     {
-        FamilyAccount? account = null;
+        bool isValidKey = _houseKeyService.TryValidateHouseKey(query.HouseKeyJson, out Guid familyId);
+        Console.WriteLine($"[RECOVER KEY] Validation Result: {isValidKey}, FamilyId: {familyId}");
 
-        // Path A: Recovery via imported House Key JSON file
-        if (!string.IsNullOrWhiteSpace(query.HouseKeyJson))
+        if (isValidKey)
         {
-            if (_houseKeyService.TryValidateHouseKey(query.HouseKeyJson, out Guid familyId))
-            {
-                account = await _dbContext.FamilyAccounts
-                    .FirstOrDefaultAsync(x => x.Id == familyId, ct);
-            }
-        }
-        // Path B: Recovery via 4-Word Passphrase + Virtual Landmark
-        else if (!string.IsNullOrWhiteSpace(query.Passphrase) && !string.IsNullOrWhiteSpace(query.VirtualLandmarkId))
-        {
-            string targetHash = _identityHasher.HashIdentity(query.Passphrase, query.VirtualLandmarkId);
-
             account = await _dbContext.FamilyAccounts
-                .FirstOrDefaultAsync(x => x.IdentityHash == targetHash, ct);
+                .FirstOrDefaultAsync(x => x.Id == familyId, ct);
+            Console.WriteLine($"[RECOVER KEY] Account found in DB: {account is not null}");
         }
-
-        if (account is null)
-        {
-            return null; // Account not found or credentials invalid
-        }
-
-        // Update activity timestamp on successful login
-        account.RecordActivity();
-        await _dbContext.SaveChangesAsync(ct);
-
-        string houseKeyJson = _houseKeyService.ExportHouseKeyJson(account.Id);
-
-        return new RecoverAccountResponse(
-            FamilyId: account.Id,
-            HouseKeyJson: houseKeyJson,
-            CreatedAtUtc: account.CreatedAtUtc,
-            LastActiveAtUtc: account.LastActiveAtUtc
-        );
     }
+    // Path B: Recovery via Passphrase + Landmark
+    else if (!string.IsNullOrWhiteSpace(query.Passphrase) && !string.IsNullOrWhiteSpace(query.VirtualLandmarkId))
+    {
+        string targetHash = _identityHasher.HashIdentity(query.Passphrase, query.VirtualLandmarkId);
+        Console.WriteLine($"[RECOVER HASH] Computed Hash: {targetHash}");
+
+        account = await _dbContext.FamilyAccounts
+            .FirstOrDefaultAsync(x => x.IdentityHash == targetHash, ct);
+        Console.WriteLine($"[RECOVER HASH] Account found in DB: {account is not null}");
+    }
+
+    if (account is null)
+    {
+        Console.WriteLine("[RECOVER FAILED] Returning null (HTTP 404)");
+        return null;
+    }
+
+    account.RecordActivity();
+    await _dbContext.SaveChangesAsync(ct);
+
+    string houseKeyJson = _houseKeyService.ExportHouseKeyJson(account.Id);
+
+    return new RecoverAccountResponse(
+        FamilyId: account.Id,
+        HouseKeyJson: houseKeyJson,
+        CreatedAtUtc: account.CreatedAtUtc,
+        LastActiveAtUtc: account.LastActiveAtUtc
+    );
+}
+
+
+
+
 }

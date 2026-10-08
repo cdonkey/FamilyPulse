@@ -6,7 +6,8 @@ public class Member
     public Guid FamilyAccountId { get; private set; }
     public string Name { get; private set; } = string.Empty;
     public string Role { get; private set; } = string.Empty; // e.g., "Parent", "Child"
-    
+    public DateTime CreatedAtUtc { get; set; }
+
 
     // Required for EF Core ORM materialization
     private Member() { }
@@ -24,5 +25,12 @@ public class Member
         Name = name;
         Role = role;
     }
+
+
+    public void Update(string name, string role)
+{
+    Name = string.IsNullOrWhiteSpace(name) ? Name : name.Trim();
+    Role = string.IsNullOrWhiteSpace(role) ? Role : role.Trim();
+}
 }
 

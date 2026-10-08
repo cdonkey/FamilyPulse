@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FamilyPulse — Identity Console</title>
+  <title>FamilyPulse — Console & Member Management</title>
   <style>
     :root {
       --bg: #0f172a;
@@ -15,6 +15,7 @@
       --primary-hover: #0284c7;
       --success: #4ade80;
       --danger: #f87171;
+      --warning: #fbbf24;
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -27,7 +28,7 @@
       padding: 2rem 1rem;
     }
 
-    .container { width: 100%; max-width: 800px; display: flex; flex-direction: column; gap: 1.5rem; }
+    .container { width: 100%; max-width: 850px; display: flex; flex-direction: column; gap: 1.5rem; }
     .header { text-align: center; margin-bottom: 0.5rem; }
     .header h1 { font-size: 1.75rem; color: var(--primary); }
     .header p { color: var(--muted); font-size: 0.9rem; }
@@ -65,6 +66,9 @@
     .btn:hover { background: var(--primary-hover); color: #fff; }
     .btn-secondary { background: #334155; color: var(--text); }
     .btn-secondary:hover { background: #475569; }
+    .btn-danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); border: 1px solid var(--danger); }
+    .btn-danger:hover { background: var(--danger); color: #0f172a; }
+    .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
 
     .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
     .tab {
@@ -90,6 +94,22 @@
     .result-box.success { background: rgba(74, 222, 128, 0.1); border: 1px solid var(--success); color: var(--success); }
     .result-box.error { background: rgba(248, 113, 113, 0.1); border: 1px solid var(--danger); color: var(--danger); }
 
+    /* Members Table/List styling */
+    .member-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+    }
+    .member-table th, .member-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .member-table th { color: var(--muted); font-weight: 600; }
+    .member-table tr:last-child td { border-bottom: none; }
+    .actions-cell { display: flex; gap: 0.4rem; }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -98,10 +118,10 @@
 <div class="container">
   <div class="header">
     <h1>FamilyPulse Console</h1>
-    <p>Zero-Knowledge Identity Verification & Key Recovery Test Bench</p>
+    <p>Identity Verification & Member Management Workstation</p>
   </div>
 
-  <!-- REGISTRATION CARD -->
+  <!-- 1. REGISTRATION CARD -->
   <div class="card">
     <h2>1. Register Anonymous Family</h2>
     <form id="register-form">
@@ -110,7 +130,7 @@
         <input type="text" id="landmark" placeholder="e.g. Central Park West" required>
       </div>
       <div class="form-group">
-        <label for="custom-passphrase">Custom 4-Word Passphrase (Optional — leave blank to auto-generate)</label>
+        <label for="custom-passphrase">Custom 4-Word Passphrase (Optional)</label>
         <input type="text" id="custom-passphrase" placeholder="e.g. river-stone-falcon-bright">
       </div>
       <button type="submit" class="btn">Register Family</button>
@@ -122,7 +142,7 @@
     </button>
   </div>
 
-  <!-- RECOVERY CARD -->
+  <!-- 2. RECOVERY CARD -->
   <div class="card">
     <h2>2. Recover Family Account</h2>
     <div class="tabs">
@@ -154,10 +174,53 @@
 
     <div id="recover-output" class="hidden"></div>
   </div>
+
+  <!-- 3. MEMBER MANAGEMENT CARD -->
+  <div class="card">
+    <h2>3. Family Member Management</h2>
+    <div class="form-group">
+      <label for="active-family-id">Active Family Account ID</label>
+      <div style="display: flex; gap: 0.5rem;">
+        <input type="text" id="active-family-id" placeholder="Authenticate above or paste Guid family ID" style="flex: 1;">
+        <button id="load-members-btn" class="btn btn-secondary">Load Members</button>
+      </div>
+    </div>
+
+    <!-- Add Member Inline Form -->
+    <form id="add-member-form" style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 1rem;">
+      <label style="margin-bottom: 0.5rem; display: block; font-weight: 600; color: var(--primary);">Add New Member</label>
+      <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <input type="text" id="member-name" placeholder="Member Name (e.g. Alex)" required style="flex: 2; min-width: 150px;">
+        <input type="text" id="member-role" placeholder="Role (e.g. Parent, Child)" required style="flex: 1; min-width: 120px;">
+        <button type="submit" class="btn">Add Member</button>
+      </div>
+    </form>
+
+    <div id="member-status" class="hidden"></div>
+
+    <!-- Member List Table -->
+    <table class="member-table hidden" id="member-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Role</th>
+          <th>Created (UTC)</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="member-table-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <script>
   let currentHouseKeyJson = "";
+
+  // Helper to set active family ID across sections
+  function setActiveFamilyId(familyId) {
+    document.getElementById('active-family-id').value = familyId;
+    loadMembers();
+  }
 
   // Tab Switcher
   function switchTab(mode) {
@@ -169,63 +232,47 @@
     document.getElementById('recover-file-form').classList.toggle('hidden', mode !== 'file');
   }
 
+  // Handle Registration
+  document.getElementById('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const landmark = document.getElementById('landmark').value.trim();
+    const customPassphrase = document.getElementById('custom-passphrase').value.trim();
+    const output = document.getElementById('register-output');
+    const downloadBtn = document.getElementById('download-key-btn');
 
-
-
-
-
-
-
-document.getElementById('register-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const landmark = document.getElementById('landmark').value.trim();
-  const customPassphrase = document.getElementById('custom-passphrase').value.trim();
-  const output = document.getElementById('register-output');
-  const downloadBtn = document.getElementById('download-key-btn');
-
-  try {
-    const response = await fetch('/api/identity/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        virtualLandmarkId: landmark,
-        customPassphrase: customPassphrase || null
-      })
-    });
-
-    // Safely parse JSON or handle empty/text response
-    const text = await response.text();
-    let data = {};
     try {
-      data = text ? JSON.parse(text) : {};
-    } catch {
-      data = { error: text || `HTTP ${response.status} ${response.statusText}` };
-    }
+      const response = await fetch('/api/identity/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          virtualLandmarkId: landmark,
+          customPassphrase: customPassphrase || null
+        })
+      });
 
-    if (response.ok) {
-      currentHouseKeyJson = data.houseKeyJson;
-      output.className = 'result-box success';
-      output.textContent = `Account Registered Successfully!\n\nFamily ID: ${data.familyId}\nPassphrase: ${data.passphrase}\nLandmark:  ${data.virtualLandmarkId}`;
-      output.classList.remove('hidden');
-      downloadBtn.classList.remove('hidden');
-    } else {
+      const text = await response.text();
+      const data = text ? JSON.parse(text) : {};
+
+      if (response.ok) {
+        currentHouseKeyJson = data.houseKeyJson;
+        output.className = 'result-box success';
+        output.textContent = `Account Registered Successfully!\n\nFamily ID: ${data.familyId}\nPassphrase: ${data.passphrase}\nLandmark:  ${data.virtualLandmarkId}`;
+        output.classList.remove('hidden');
+        downloadBtn.classList.remove('hidden');
+
+        setActiveFamilyId(data.familyId);
+      } else {
+        output.className = 'result-box error';
+        output.textContent = `Registration Failed (${response.status}): ${data.error || text || response.statusText}`;
+        output.classList.remove('hidden');
+        downloadBtn.classList.add('hidden');
+      }
+    } catch (err) {
       output.className = 'result-box error';
-      output.textContent = `Registration Failed (${response.status}): ${data.error || text || response.statusText}`;
+      output.textContent = `Client Error: ${err.message}`;
       output.classList.remove('hidden');
-      downloadBtn.classList.add('hidden');
     }
-  } catch (err) {
-    output.className = 'result-box error';
-    output.textContent = `Client Error: ${err.message}`;
-    output.classList.remove('hidden');
-  }
-});
-
-
-
-
-
-
+  });
 
   // Download House Key JSON File
   document.getElementById('download-key-btn').addEventListener('click', () => {
@@ -247,34 +294,22 @@ document.getElementById('register-form').addEventListener('submit', async (e) =>
     await performRecovery({ passphrase, virtualLandmarkId: landmark });
   });
 
+  // Recover via File Upload
+  document.getElementById('recover-file-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fileInput = document.getElementById('housekey-file');
+    if (!fileInput.files.length) return;
 
-
-document.getElementById('recover-file-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const fileInput = document.getElementById('housekey-file');
-  if (!fileInput.files.length) return;
-
-  const file = fileInput.files[0];
-  const reader = new FileReader();
-
-  reader.onload = async (event) => {
-    let houseKeyJson = event.target.result.trim();
-
-    // Remove wrapping quotes if the file was downloaded as a raw JSON string
-    if (houseKeyJson.startsWith('"') && houseKeyJson.endsWith('"')) {
-      try {
-        houseKeyJson = JSON.parse(houseKeyJson);
-      } catch { /* keep original if unparseable */ }
-    }
-
-    await performRecovery({ houseKeyJson });
-  };
-
-  reader.readAsText(file);
-});
-
-
-
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      let houseKeyJson = event.target.result.trim();
+      if (houseKeyJson.startsWith('"') && houseKeyJson.endsWith('"')) {
+        try { houseKeyJson = JSON.parse(houseKeyJson); } catch {}
+      }
+      await performRecovery({ houseKeyJson });
+    };
+    reader.readAsText(fileInput.files[0]);
+  });
 
   // Shared Recovery Execution
   async function performRecovery(payload) {
@@ -288,19 +323,16 @@ document.getElementById('recover-file-form').addEventListener('submit', async (e
       });
 
       const text = await response.text();
-       let data = {};
-      try {
-         data = text ? JSON.parse(text) : {};
-      } catch {
-         data = { error: text || `HTTP ${response.status} ${response.statusText}` };
-      }
+      const data = text ? JSON.parse(text) : {};
 
       if (response.ok) {
         output.className = 'result-box success';
         output.textContent = `Account Authenticated & Recovered!\n\nFamily ID:      ${data.familyId}\nCreated At (UTC): ${data.createdAtUtc}\nLast Active:      ${data.lastActiveAtUtc}`;
+        
+        setActiveFamilyId(data.familyId);
       } else {
         output.className = 'result-box error';
-        output.textContent = `Recovery Failed: ${data.error || 'Invalid credentials or key file.'}`;
+        output.textContent = `Recovery Failed (${response.status}): ${data.error || text || 'Invalid credentials or key file.'}`;
       }
       output.classList.remove('hidden');
     } catch (err) {
@@ -308,6 +340,173 @@ document.getElementById('recover-file-form').addEventListener('submit', async (e
       output.textContent = `Network Error: ${err.message}`;
       output.classList.remove('hidden');
     }
+  }
+
+  // ==========================================
+  // MEMBER MANAGEMENT FUNCTIONS
+  // ==========================================
+
+  document.getElementById('load-members-btn').addEventListener('click', loadMembers);
+
+  async function loadMembers() {
+    const familyId = document.getElementById('active-family-id').value.trim();
+    const statusBox = document.getElementById('member-status');
+    const table = document.getElementById('member-table');
+    const tbody = document.getElementById('member-table-body');
+
+    if (!familyId) {
+      statusBox.className = 'result-box error';
+      statusBox.textContent = 'Please register/recover an account or enter a valid Family ID.';
+      statusBox.classList.remove('hidden');
+      table.classList.add('hidden');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/families/${familyId}/members`);
+      const text = await response.text();
+      const members = text ? JSON.parse(text) : [];
+
+      if (response.ok) {
+        statusBox.classList.add('hidden');
+        tbody.innerHTML = '';
+
+        if (members.length === 0) {
+          statusBox.className = 'result-box success';
+          statusBox.textContent = 'No members found for this family. Add one using the form above!';
+          statusBox.classList.remove('hidden');
+          table.classList.add('hidden');
+          return;
+        }
+
+        members.forEach(member => {
+          const tr = document.createElement('tr');
+          tr.id = `member-row-${member.id}`;
+          tr.innerHTML = `
+            <td class="col-name">${escapeHtml(member.name)}</td>
+            <td class="col-role">${escapeHtml(member.role)}</td>
+            <td>${new Date(member.createdAtUtc).toLocaleDateString()}</td>
+            <td class="actions-cell">
+              <button class="btn btn-secondary btn-sm" onclick="enableInlineEdit('${member.id}', '${escapeHtml(member.name)}', '${escapeHtml(member.role)}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteMember('${member.id}')">Delete</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        table.classList.remove('hidden');
+      } else {
+        statusBox.className = 'result-box error';
+        statusBox.textContent = `Failed to load members: ${response.statusText}`;
+        statusBox.classList.remove('hidden');
+        table.classList.add('hidden');
+      }
+    } catch (err) {
+      statusBox.className = 'result-box error';
+      statusBox.textContent = `Network Error: ${err.message}`;
+      statusBox.classList.remove('hidden');
+    }
+  }
+
+  // Add New Member
+  document.getElementById('add-member-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const familyId = document.getElementById('active-family-id').value.trim();
+    const nameInput = document.getElementById('member-name');
+    const roleInput = document.getElementById('member-role');
+    const statusBox = document.getElementById('member-status');
+
+    if (!familyId) {
+      alert('Please set a valid Active Family ID first.');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/families/${familyId}/members`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: nameInput.value.trim(), role: roleInput.value.trim() })
+      });
+
+      if (response.ok) {
+        nameInput.value = '';
+        roleInput.value = '';
+        await loadMembers();
+      } else {
+        const text = await response.text();
+        statusBox.className = 'result-box error';
+        statusBox.textContent = `Add Member Failed (${response.status}): ${text}`;
+        statusBox.classList.remove('hidden');
+      }
+    } catch (err) {
+      statusBox.className = 'result-box error';
+      statusBox.textContent = `Network Error: ${err.message}`;
+      statusBox.classList.remove('hidden');
+    }
+  });
+
+  // Enable Inline Editing for a Row
+  function enableInlineEdit(memberId, currentName, currentRole) {
+    const tr = document.getElementById(`member-row-${memberId}`);
+    tr.querySelector('.col-name').innerHTML = `<input type="text" id="edit-name-${memberId}" value="${currentName}" style="width: 100%;">`;
+    tr.querySelector('.col-role').innerHTML = `<input type="text" id="edit-role-${memberId}" value="${currentRole}" style="width: 100%;">`;
+    tr.querySelector('.actions-cell').innerHTML = `
+      <button class="btn btn-sm" onclick="saveMemberUpdate('${memberId}')">Save</button>
+      <button class="btn btn-secondary btn-sm" onclick="loadMembers()">Cancel</button>
+    `;
+  }
+
+  // Save Member Update (PUT)
+  async function saveMemberUpdate(memberId) {
+    const familyId = document.getElementById('active-family-id').value.trim();
+    const newName = document.getElementById(`edit-name-${memberId}`).value.trim();
+    const newRole = document.getElementById(`edit-role-${memberId}`).value.trim();
+
+    try {
+      const response = await fetch(`/api/families/${familyId}/members/${memberId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, role: newRole })
+      });
+
+      if (response.ok) {
+        await loadMembers();
+      } else {
+        alert('Failed to update member.');
+      }
+    } catch (err) {
+      alert(`Error updating member: ${err.message}`);
+    }
+  }
+
+  // Delete Member (DELETE)
+  async function deleteMember(memberId) {
+    if (!confirm('Are you sure you want to remove this family member?')) return;
+
+    const familyId = document.getElementById('active-family-id').value.trim();
+
+    try {
+      const response = await fetch(`/api/families/${familyId}/members/${memberId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        await loadMembers();
+      } else {
+        alert('Failed to delete member.');
+      }
+    } catch (err) {
+      alert(`Error deleting member: ${err.message}`);
+    }
+  }
+
+  // Utility to escape HTML and prevent XSS in names
+  function escapeHtml(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 </script>
 

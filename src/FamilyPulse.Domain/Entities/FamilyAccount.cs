@@ -25,9 +25,11 @@ public class FamilyAccount
     }
 
 
-    public void AddMember(string name, string role)
+    public Member AddMember(string name, string role)
     {
-        _members.Add(new Member(Id, name, role));
+        Member member = new Member(Id, name, role);
+        _members.Add(member);
+        return member;
     }
 
     public void RecordActivity()

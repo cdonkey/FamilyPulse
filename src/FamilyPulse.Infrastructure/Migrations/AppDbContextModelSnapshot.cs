@@ -48,6 +48,9 @@ namespace FamilyPulse.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("FamilyAccountId")
                         .HasColumnType("TEXT");
 
