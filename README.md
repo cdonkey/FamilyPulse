@@ -1,103 +1,114 @@
-# FamilyPulse 👨‍👩‍👧‍👦
+# FamilyPulse 🌿
 
-FamilyPulse measures household dynamics across 4 core life domains, benchmarks metrics against peer cohorts to drive healthy family engagement, and delivers automated AI coaching.
+> **A privacy-first, zero-knowledge family wellness and identity platform built with C# 12 and .NET 8/9 Clean Architecture.**
 
----
-
-## 💡 Overview & Value Proposition
-
-FamilyPulse shifts family harmony from subjective guessing to data-driven wellness:
-* **4 Core Domains:** Tracks micro-checkins across **Financial**, **Education**, **Marriage**, and **Activities**.
-* **Cohort Benchmarking:** Compares household trends against anonymized demographic averages (e.g., *"Urban families with 2 children"*).
-* **Healthy Engagement:** Uses relative scoring indices (-100 to +100) and percentile ranks to encourage positive household habits.
-* **Automated AI Coaching:** Integrated background agents analyze 12-month behavioral trends to generate structured, actionable advice.
+FamilyPulse provides a secure, anonymous space for families to perform weekly wellness check-ins, manage family roles, and receive streaming insights—without ever surrendering personal identifiable information (PII) to a centralized auth provider.
 
 ---
 
-## 🏛 System Architecture
+## 🏛️ Architectural Overview
 
-The solution follows **Clean Architecture / Explicit Architecture** principles, maintaining strict inward-only dependencies around the pure C# domain model.
+FamilyPulse strictly adheres to **Clean Architecture** principles, maintaining clear separation of concerns, strict dependency inversion, and isolated domain logic.
 
 ```
-┌───────────────────────────────────────────────┐
-│                FamilyPulse.Api                │
-│  (Minimal APIs, OpenAPI/Swagger, Middleware)  │
-└───────────────────────┬───────────────────────┘
-                        │
-                        ▼
-┌───────────────────────────────────────────────┐
-│            FamilyPulse.Application            │
-│  (Use Cases, DTOs, Semantic Kernel AI Agent)  │
-└───────────────────────┬───────────────────────┘
-                        │
-                        ▼
-┌───────────────────────────────────────────────┐
-│          FamilyPulse.Infrastructure           │
-│ (EF Core, SQLite/PostgreSQL, Telemetry Seeder)│
-└───────────────────────┬───────────────────────┘
-                        │
-                        ▼
-┌───────────────────────────────────────────────┐
-│               FamilyPulse.Domain              │
-│ (Pure Entities, Value Objects, Domain Enums)  │
-└───────────────────────────────────────────────┘
+                  ┌────────────────────────┐
+                  │    FamilyPulse.Api     │  (Minimal APIs, EndpointFilters, wwwroot)
+                  └───────────┬────────────┘
+                              │
+                  ┌───────────▼────────────┐
+                  │ FamilyPulse.Application│  (Interfaces, Services, DTOs, Commands)
+                  └───────────┬────────────┘
+                              │
+                  ┌───────────▼────────────┐
+                  │  FamilyPulse.Domain    │  (Entities, Value Objects, Domain Events)
+                  └───────────▲────────────┘
+                              │
+                  ┌───────────┴────────────┐
+                  │FamilyPulse.Infrastructure│ (EF Core, SQLite, Security Hasher, HMAC)
+                  └────────────────────────┘
 ```
 
-### Key Engineering Features
-* **Read-Optimized LINQ Pipelines:** Read endpoints utilize `.AsNoTracking()` and cancellation tokens for high-throughput memory efficiency.
-* **Synthetic Telemetry Seeder:** Built-in `DataSeederService` populates 52 weeks (12 months) of realistic historical rating data on initial startup.
-* **Semantic Kernel Agent Integration:** Asynchronous pipeline that transforms raw EF Core relational time-series telemetry into structured JSON coaching reports.
+---
+
+## 💡 Key Technical & Design Decisions
+
+### 1. Zero-Knowledge Identity Model
+* **No Passwords or Emails**: Authenticates accounts using a **4-word deterministic passphrase** paired with a **Virtual Landmark ID**.
+* **PBKDF2 Hashing**: Identity hashes are computed deterministically via `Pbkdf2IdentityHasher` using 100,000 SHA-256 iterations and a server-side pepper, ensuring account verification occurs without storing readable credentials.
+* **Cryptographic House Key Export**: Families can export a portable, HMAC SHA-256 signed `family-key.json` file via `HouseKeyService` for zero-trust offline backup and instant single-click recovery.
+
+### 2. High-Performance Minimal APIs & Validation
+* Uses .NET Minimal APIs for ultra-low latency routing and reduced memory footprint.
+* Implements custom, reusable **native `EndpointFilters`** (e.g., `ValidationFilter<T>`) to validate incoming payloads before they hit application handlers.
+
+### 3. Lightweight Persistence with EF Core & SQLite
+* Standardized on **SQLite** with EF Core to keep infrastructure self-contained, enabling rapid local development and low-cost cloud deployment with persistent storage volumes.
+* Robust migration lifecycle managed explicitly via EF Core CLI migrations.
+
+### 4. Comprehensive Testing Suite
+* Fully automated **xUnit** integration and unit test suite.
+* Exercises repository queries, cryptographic key generation, and identity matching using EF Core In-Memory providers.
 
 ---
 
-## 🛠 Tech Stack
+## 📦 Project Structure
 
-* **Framework:** ASP.NET Core (.NET 10 )
-* **Language:** C# 12
-* **ORM:** Entity Framework Core (EF Core)
-* **Database:** SQLite (Default for rapid local/Codespaces demo) / PostgreSQL-ready
-* **AI Engine:** Microsoft Semantic Kernel
-* **API Documentation:** OpenAPI / Swagger UI
-* **Containerization:** Docker / GitHub Codespaces (`devcontainer.json`)
+```
+src/
+├── FamilyPulse.Domain/          # Core Domain Aggregate Roots (FamilyAccount, Member, Rating)
+├── FamilyPulse.Application/     # Application contracts, DTOs, and Service implementations
+├── FamilyPulse.Infrastructure/  # DbContext, EF Configurations, Security & Crypto logic
+└── FamilyPulse.Api/             # API Endpoints, Middleware, Validation Filters & Vanilla JS Console
+tests/
+└── FamilyPulse.Tests/           # xUnit test suite for Domain, Identity, and Integration
+```
 
 ---
 
-## 🚀 Getting Started
+## 🛠️ Getting Started
 
-### Option 1: GitHub Codespaces (Zero Setup)
-1. Click **Code** -> **Codespaces** -> **Create codespace on main**.
-2. Once the container loads, run:
-   ```bash
-   dotnet run --project src/FamilyPulse.Api
-   ```
+### Prerequisites
+* [.NET 8.0 SDK](https://dotnet.microsoft.com/download) or higher
+* EF Core CLI tool (`dotnet tool install --global dotnet-ef`)
 
-### Option 2: Local CLI Setup
+### 1. Clone & Build
 ```bash
-# Clone the repository
 git clone [https://github.com/your-username/FamilyPulse.git](https://github.com/your-username/FamilyPulse.git)
 cd FamilyPulse
-
-# Restore dependencies
-dotnet restore
-
-# Run the API
-dotnet run --project src/FamilyPulse.Api
+dotnet build
 ```
 
-Navigate to `http://localhost:5000/swagger` in your browser.
+### 2. Run Database Migrations
+```bash
+dotnet ef database update --project src/FamilyPulse.Infrastructure --startup-project src/FamilyPulse.Api
+```
+
+### 3. Launch Application
+```bash
+dotnet run --project src/FamilyPulse.Api
+```
+Navigate to `http://localhost:5000` (or the configured HTTPS port) in your browser to access the built-in identity & member console.
+
+### 4. Run Test Suite
+```bash
+dotnet test
+```
 
 ---
 
-## 📊 Core Endpoints
+## 🤝 Open Collaborations & Roadmap
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/members` | Fetches all family members across roles |
-| `POST` | `/api/ratings` | Submits a micro-rating (-5 to +5) tagged to a domain |
-| `GET` | `/api/reports/annual-harmony` | Computes 12-month domain percentiles & calls Semantic Kernel AI agent |
+I am actively building FamilyPulse as an open-source project and welcome contributions from peer developers, frontend engineers, and UX designers!
+
+### Current Roadmap
+- [x] Zero-knowledge registration & HMAC key export/recovery
+- [x] Family member CRUD operations with Clean Architecture
+- [ ] **Weekly Wellness Check-in Domain Engine** (Ratings, aggregate scores, trends)
+- [ ] **Real-time Coaching via SSE** (Server-Sent Events streaming AI wellness advice)
+- [ ] **Frontend Overhaul** (Looking for collaborators to build a modern React / Blazor / Tailwind UI)
 
 ---
 
-## 📄 License
+## 📜 License
 
-Distributed under the **MIT License**. See `LICENSE` for details.
+Distributed under the MIT License. See `LICENSE` for more information.
