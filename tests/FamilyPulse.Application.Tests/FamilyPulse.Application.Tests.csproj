@@ -16,6 +16,10 @@
     <PackageReference Include="Moq" Version="4.21.0" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.0-*" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <ProjectReference Include="..\FamilyPulse.Testing.Shared\FamilyPulse.Testing.Shared.csproj" />
+
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +30,7 @@
     <ProjectReference Include="..\..\src\FamilyPulse.Application\FamilyPulse.Application.csproj" />
     <ProjectReference Include="..\..\src\FamilyPulse.Domain\FamilyPulse.Domain.csproj" />
     <ProjectReference Include="..\..\src\FamilyPulse.Infrastructure\FamilyPulse.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\FamilyPulse.Testing.Shared\FamilyPulse.Testing.Shared.csproj" />
   </ItemGroup>
 
 </Project>

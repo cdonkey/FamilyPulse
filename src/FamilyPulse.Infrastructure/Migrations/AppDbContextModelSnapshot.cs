@@ -17,6 +17,45 @@ namespace FamilyPulse.Infrastructure.Migrations
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
+            modelBuilder.Entity("FamilyPulse.Domain.Entities.CheckIn", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("ClosenessLevel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("EnergyLevel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("FamilyAccountId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("StressLevel")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Tags")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CheckIns");
+                });
+
             modelBuilder.Entity("FamilyPulse.Domain.Entities.FamilyAccount", b =>
                 {
                     b.Property<Guid>("Id")
@@ -69,6 +108,43 @@ namespace FamilyPulse.Infrastructure.Migrations
                     b.HasIndex("FamilyAccountId");
 
                     b.ToTable("Members");
+                });
+
+            modelBuilder.Entity("FamilyPulse.Domain.Entities.MemberContext", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("Age")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("CommunicationPreference")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("FamilyAccountId")
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("Interests")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("LastUpdatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("TEXT");
+
+                    b.PrimitiveCollection<string>("TopicsToAvoid")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("MemberContexts");
                 });
 
             modelBuilder.Entity("FamilyPulse.Domain.Entities.Rating", b =>

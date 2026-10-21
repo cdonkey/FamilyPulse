@@ -1,3 +1,4 @@
+
 using System.Text.Json.Serialization;
 using FamilyPulse.Application.Dtos;
 using FamilyPulse.Application.Services;
@@ -13,6 +14,8 @@ using System.Text.Json;
 using FamilyPulse.Application.Identity.Services;
 using FamilyPulse.Api.Endpoints;
 using FamilyPulse.Application.Members.Services;
+using FamilyPulse.Application.CheckIns.Services;
+using FamilyPulse.Application.Contexts.Services;
 
 
 
@@ -59,6 +62,9 @@ builder.Services.AddScoped<IIdentityService, IdentityService>();
 
 builder.Services.AddScoped<IMemberService, MemberService>();
 
+builder.Services.AddScoped<ICheckInService, CheckInService>();
+builder.Services.AddScoped<IMemberContextService, MemberContextService>();
+
 
 
 var app = builder.Build();
@@ -85,6 +91,10 @@ app.UseDefaultFiles(); // Serves wwwroot/index.html automatically at http://loca
 app.UseStaticFiles();
 app.MapIdentityEndpoints();
 app.MapMemberEndpoints(); 
+app.MapCheckInEndpoints();
+app.MapMemberContextEndpoints();
+
+
 
 // 5. Minimal API Endpoints
 
@@ -170,7 +180,6 @@ app.MapGet("/api/coaching/advice/stream", (
     }
 })
 .WithName("StreamCoachingAdvice");
-
 
 
 

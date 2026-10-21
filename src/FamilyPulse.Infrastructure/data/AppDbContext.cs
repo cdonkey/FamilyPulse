@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FamilyPulse.Application.Common.Interfaces;
 using FamilyPulse.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -13,9 +14,18 @@ public class AppDbContext : DbContext, IAppDbContext
     public DbSet<Rating> Ratings => Set<Rating>();
     public DbSet<FamilyAccount> FamilyAccounts => Set<FamilyAccount>();
 
+    public DbSet<CheckIn> CheckIns => Set<CheckIn>();
+
+
+    public DbSet<MemberContext> MemberContexts => Set<MemberContext>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Ignore<AiMemoryItem>();
+
+        modelBuilder.ApplyConfigurationsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
 
 
     modelBuilder.Entity<FamilyAccount>(b =>
@@ -53,5 +63,21 @@ public class AppDbContext : DbContext, IAppDbContext
             b.Property(r => r.Note).HasMaxLength(500);
             b.HasIndex(r => r.CreatedAtUtc);
         });
+
+
+
+        modelBuilder.Entity<CheckIn>(b =>
+        {
+           b.HasKey(c => c.Id);
+           b.Property(c => c.Tags)
+           .HasConversion(
+            v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
+            v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()); 
+        });
+
+
+
     }
+
+    
 }
