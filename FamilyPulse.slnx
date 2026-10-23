@@ -7,5 +7,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/FamilyPulse.Application.Tests/FamilyPulse.Application.Tests.csproj" />
+    <Project Path="tests/FamilyPulse.Integration.Tests/FamilyPulse.Integration.Tests.csproj" />
+    <Project Path="tests/FamilyPulse.Testing.Shared/FamilyPulse.Testing.Shared.csproj" />
   </Folder>
 </Solution>

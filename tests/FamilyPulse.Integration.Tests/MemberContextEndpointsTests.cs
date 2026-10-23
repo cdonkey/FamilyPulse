@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using FamilyPulse.Application.Contexts.DTOs;
 
 using FamilyPulse.IntegrationTests;
-using FamilyPulse.IntegrationTests.Infrastructure;
+using FamilyPulse.Testing.Shared;
 using Xunit;
 
 namespace FamilyPulse.IntegrationTests.Endpoints;

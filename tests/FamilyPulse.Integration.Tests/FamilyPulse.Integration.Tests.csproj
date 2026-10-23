@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Test Framework & Runner Packages -->
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.0" />
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shared testing helper (provides CustomWebApplicationFactory) -->
+    <ProjectReference Include="..\FamilyPulse.Testing.Shared\FamilyPulse.Testing.Shared.csproj" />
+
+    <!-- Application & Domain references for DTOs, commands, and entities -->
+    <ProjectReference Include="..\..\src\FamilyPulse.Application\FamilyPulse.Application.csproj" />
+    <ProjectReference Include="..\..\src\FamilyPulse.Domain\FamilyPulse.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

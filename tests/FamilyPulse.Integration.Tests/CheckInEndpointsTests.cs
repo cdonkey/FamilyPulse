@@ -1,11 +1,13 @@
 using Xunit; // Provides IClassFixture<T>, [Fact], and Assert
-using Microsoft.AspNetCore.Mvc.Testing; // Provides WebApplicationFactory<T>
+
 using System.Net;
 using System.Net.Http.Json;
 using FamilyPulse.Application.CheckIns.Dtos;
-using FamilyPulse.IntegrationTests.Infrastructure;
+
 using FamilyPulse.Domain.Entities;
-using FamilyPulse.Application.Tests;
+
+using FamilyPulse.Testing.Shared;
+
 namespace FamilyPulse.IntegrationTests.Endpoints;
 
 
