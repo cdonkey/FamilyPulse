@@ -16,6 +16,8 @@ public class AppDbContext : DbContext, IAppDbContext
 
     public DbSet<CheckIn> CheckIns => Set<CheckIn>();
 
+    public DbSet<MemberContextMemory> MemberContextMemories => Set<MemberContextMemory>();
+
 
     public DbSet<MemberContext> MemberContexts => Set<MemberContext>();
 
@@ -27,6 +29,9 @@ public class AppDbContext : DbContext, IAppDbContext
 
         modelBuilder.ApplyConfigurationsFromAssembly(System.Reflection.Assembly.GetExecutingAssembly());
 
+
+
+        
 
     modelBuilder.Entity<FamilyAccount>(b =>
     {
@@ -74,6 +79,17 @@ public class AppDbContext : DbContext, IAppDbContext
             v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
             v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>()); 
         });
+
+        modelBuilder.Entity<MemberContextMemory>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Content).IsRequired();
+            entity.HasOne(e => e.Member)
+                  .WithMany()
+                  .HasForeignKey(e => e.MemberId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
 
 
 

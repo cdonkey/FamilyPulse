@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
-
+using  System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace FamilyPulse.Testing.Shared;
@@ -31,6 +31,12 @@ protected override void ConfigureWebHost(IWebHostBuilder builder)
             {
                 options.UseSqlite(_connection);
             });
+
+          services.AddControllers()
+            .AddJsonOptions(options =>
+          {
+                 options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+        });
             
             // Program.cs will now execute MigrateAsync() and SeedAsync() automatically when the test server starts!
         });
@@ -42,7 +48,11 @@ protected override void ConfigureWebHost(IWebHostBuilder builder)
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-        var family = new FamilyAccount("Test Family");
+        var family = new FamilyAccount($"test-family-{Guid.NewGuid():N}");
+
+
+
+
         var member = new Member(family.Id, "Alex", "Parent");
 
         db.FamilyAccounts.Add(family);
@@ -51,6 +61,9 @@ protected override void ConfigureWebHost(IWebHostBuilder builder)
 
         return (family.Id, member.Id);
     }
+
+
+    
 
     public void InitializeDatabase()
     {

@@ -147,6 +147,37 @@ namespace FamilyPulse.Infrastructure.Migrations
                     b.ToTable("MemberContexts");
                 });
 
+            modelBuilder.Entity("FamilyPulse.Domain.Entities.MemberContextMemory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MemberId");
+
+                    b.ToTable("MemberContextMemories");
+                });
+
             modelBuilder.Entity("FamilyPulse.Domain.Entities.Rating", b =>
                 {
                     b.Property<Guid>("Id")
@@ -186,6 +217,17 @@ namespace FamilyPulse.Infrastructure.Migrations
                         .HasForeignKey("FamilyAccountId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FamilyPulse.Domain.Entities.MemberContextMemory", b =>
+                {
+                    b.HasOne("FamilyPulse.Domain.Entities.Member", "Member")
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Member");
                 });
 
             modelBuilder.Entity("FamilyPulse.Domain.Entities.FamilyAccount", b =>

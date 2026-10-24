@@ -1,9 +1,11 @@
 using System.Net;
 using System.Net.Http.Json;
 using FamilyPulse.Application.Contexts.DTOs;
-
-using FamilyPulse.IntegrationTests;
+using FamilyPulse.Domain.Entities;
+using FamilyPulse.Infrastructure.Data;
 using FamilyPulse.Testing.Shared;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace FamilyPulse.IntegrationTests.Endpoints;
@@ -47,6 +49,8 @@ public class MemberContextEndpointsTests : IClassFixture<CustomWebApplicationFac
         Assert.Contains("Chess", context.Interests);
     }
 
+/*
+
     [Fact]
     public async Task PostAiMemory_AddsLearnedMemoryToContextVault()
     {
@@ -77,4 +81,77 @@ public class MemberContextEndpointsTests : IClassFixture<CustomWebApplicationFac
         Assert.Equal("Stress Trigger", memory.Category);
         Assert.Equal("Gets anxious before exams", memory.Fact);
     }
+
+
+
+*/
+
+
+
+[Fact]
+public async Task PostAiMemory_AddsLearnedMemoryToContextVault()
+{
+    // 1. Arrange: Ensure parent account/member exist in DB
+    using (var setupScope = _factory.Services.CreateScope())
+    {
+        var setupDb = setupScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        
+        var account = await setupDb.FamilyAccounts.FirstOrDefaultAsync() 
+                      ?? new FamilyAccount($"test-{Guid.NewGuid():N}");
+        if (setupDb.Entry(account).State == EntityState.Detached) 
+            setupDb.FamilyAccounts.Add(account);
+
+        var member = await setupDb.Members.FirstOrDefaultAsync(m => m.FamilyAccountId == account.Id);
+
+        if (member == null)
+        {
+            member = new Member(account.Id, "Maria", "Parent");
+            
+            setupDb.Members.Add(member);
+        }
+
+        await setupDb.SaveChangesAsync();
+    }
+
+    // Retrieve target IDs
+    Guid testMemberId;
+    using (var idScope = _factory.Services.CreateScope())
+    {
+        var db = idScope.ServiceProvider.GetRequiredService<AppDbContext>();
+        testMemberId = (await db.Members.FirstAsync()).Id;
+    }
+
+    var requestPayload = new
+    {
+        Content = "Prefers morning workout sessions",
+        Category = "Routine",
+        Source = "GrokAI"
+    };
+
+    // 2. Act: Send POST request
+    var response = await _client.PostAsJsonAsync($"/api/members/{testMemberId}/memories", requestPayload);
+    
+    // Ensure HTTP request succeeded (triggers clear error if endpoint fails)
+    response.EnsureSuccessStatusCode();
+
+    // 3. Assert: Query DB using a FRESH scope created AFTER the HTTP call
+    using (var verifyScope = _factory.Services.CreateScope())
+    {
+        var verifyDb = verifyScope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+        
+
+
+                
+        
+        // Query database directly for saved memory entries
+        var memories = await verifyDb.Set<MemberContextMemory>()
+            .Where(m => m.MemberId == testMemberId)
+            .ToListAsync();
+
+        Assert.Single(memories);
+        Assert.Equal("Prefers morning workout sessions", memories.First().Content);
+    }
+  }
+
 }

@@ -16,6 +16,7 @@ using FamilyPulse.Api.Endpoints;
 using FamilyPulse.Application.Members.Services;
 using FamilyPulse.Application.CheckIns.Services;
 using FamilyPulse.Application.Contexts.Services;
+using FamilyPulse.Application.Contexts.DTOs;
 
 
 
@@ -181,7 +182,31 @@ app.MapGet("/api/coaching/advice/stream", (
 })
 .WithName("StreamCoachingAdvice");
 
+// Example API Endpoint Definition
+app.MapPost("/api/members/{memberId:guid}/memories", async (
+    Guid memberId, 
+    AddMemoryRequest request, 
+    AppDbContext db, 
+    CancellationToken ct) =>
+{
+    var member = await db.Members.FindAsync(new object[] { memberId }, ct);
+    if (member == null)
+    {
+        return Results.NotFound($"Member with ID {memberId} not found.");
+    }
 
+    var memory = new MemberContextMemory(
+        memberId, 
+        request.Content, 
+        request.Category, 
+        request.Source
+    );
+
+    db.MemberContextMemories.Add(memory);
+    await db.SaveChangesAsync(ct);
+
+    return Results.Created($"/api/members/{memberId}/memories/{memory.Id}", memory);
+});
 
 
 

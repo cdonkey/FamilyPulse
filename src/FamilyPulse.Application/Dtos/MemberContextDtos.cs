@@ -26,3 +26,7 @@ public record RecordAiInsightCommand(
     string Fact,
     double Confidence
 );
+
+public record AddMemoryRequest(string Content,
+                               string Category, 
+                               string Source);

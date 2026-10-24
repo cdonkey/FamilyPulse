@@ -10,11 +10,20 @@ using FamilyPulse.Testing.Shared;
 
 namespace FamilyPulse.IntegrationTests.Endpoints;
 
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 
 public class CheckInEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
     private readonly CustomWebApplicationFactory _factory;
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
 
     public CheckInEndpointsTests(CustomWebApplicationFactory factory)
     {
@@ -43,13 +52,48 @@ public class CheckInEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var result = await response.Content.ReadFromJsonAsync<CheckInDto>();
+    
+        var result = await response.Content.ReadFromJsonAsync<CheckInDto>(JsonOptions);
         Assert.NotNull(result);
         Assert.Equal(familyId, result.FamilyAccountId);
         Assert.Equal(memberId, result.MemberId);
         Assert.Equal(2, result.StressLevel);
         Assert.Contains("Outdoor", result.Tags);
     }
+
+/*
+
+    [Fact]
+public async Task PostCheckIn_WithValidData_Returns201CreatedAndDto()
+{
+    // Arrange
+   var (familyId, memberId) = await _factory.SeedFamilyAndMemberAsync();
+        var command = new CreateCheckInCommand(
+            MemberId: memberId,
+            Type: CheckInType.WeeklyRoutine,
+            StressLevel: 2,
+            ClosenessLevel: 5,
+            EnergyLevel: 4,
+            Note: "Great weekend family hike",
+            Tags: new List<string> { "Outdoor", "Exercise" }
+        );
+
+        // Act
+        var response = await _client.PostAsJsonAsync($"/api/families/{familyId}/checkins", command);
+
+    response.EnsureSuccessStatusCode();
+
+    // Read as raw string first to inspect
+    var rawJson = await response.Content.ReadAsStringAsync();
+
+    var dto = await response.Content.ReadFromJsonAsync<CheckInDto>(JsonOptions);
+
+        Assert.NotNull(dto);
+        Assert.Equal("Great weekend family hike", dto.Note);
+    
+    
+}
+*/
 
     [Fact]
     public async Task GetCheckIns_ReturnsRecentCheckInsList()
@@ -64,7 +108,10 @@ public class CheckInEndpointsTests : IClassFixture<CustomWebApplicationFactory>
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        var checkIns = await response.Content.ReadFromJsonAsync<List<CheckInDto>>();
+        
+
+        var checkIns = await response.Content.ReadFromJsonAsync<List<CheckInDto>>(JsonOptions);
+
         Assert.NotNull(checkIns);
         Assert.NotEmpty(checkIns);
     }
