@@ -26,5 +26,5 @@ jobs:
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
 
-    - name: Run xUnit Tests
-      run: dotnet test --no-build --configuration Release --verbosity normal
+    - name: Run xUnit Tests      
+      run: dotnet test FamilyPulse.slnx --no-build --verbosity normal

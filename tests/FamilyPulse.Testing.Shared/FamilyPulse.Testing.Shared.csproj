@@ -1,9 +1,20 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
+
+
+<PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- Tells VSTest / dotnet test to skip running tests inside this shared helper library -->
+    <IsTestProject>false</IsTestProject>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+
+
+
+
+
 
   <ItemGroup>
     <!-- WebApplicationFactory lives here -->
