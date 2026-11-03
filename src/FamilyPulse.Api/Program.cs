@@ -17,6 +17,12 @@ using FamilyPulse.Application.Members.Services;
 using FamilyPulse.Application.CheckIns.Services;
 using FamilyPulse.Application.Contexts.Services;
 using FamilyPulse.Application.Contexts.DTOs;
+using Microsoft.Extensions.AI;
+using OpenAI;
+using FamilyPulse.Application.Coaching;
+using FamilyPulse.Infrastructure.Coaching;
+using OpenAI.Chat;
+
 
 
 
@@ -66,6 +72,20 @@ builder.Services.AddScoped<IMemberService, MemberService>();
 builder.Services.AddScoped<ICheckInService, CheckInService>();
 builder.Services.AddScoped<IMemberContextService, MemberContextService>();
 
+builder.Services.AddSingleton<IChatClient>(sp =>
+{
+    var apiKey = builder.Configuration["AI:ApiKey"] ?? "mock-key";
+    var modelId = builder.Configuration["AI:ModelId"] ?? "gpt-4o-mini";
+    
+   var openAiClient = new OpenAIClient(apiKey);
+
+    // 2. Wrap directly into OpenAIChatClient (implements IChatClient)
+    
+
+    return new ChatClient(modelId, apiKey).AsIChatClient();
+});
+
+builder.Services.AddScoped<IAiCoachingOrchestrator, AiCoachingOrchestrator>();
 
 
 var app = builder.Build();
@@ -94,6 +114,7 @@ app.MapIdentityEndpoints();
 app.MapMemberEndpoints(); 
 app.MapCheckInEndpoints();
 app.MapMemberContextEndpoints();
+app.MapCoachingEndpoints();
 
 
 
@@ -208,6 +229,22 @@ app.MapPost("/api/members/{memberId:guid}/memories", async (
     return Results.Created($"/api/members/{memberId}/memories/{memory.Id}", memory);
 });
 
+
+  app.MapGet("/api/members/{memberId:guid}/coaching/stream", async (
+    Guid memberId,
+    Guid familyAccountId,
+    IAiCoachingOrchestrator orchestrator,
+    HttpContext httpContext,
+    CancellationToken ct) =>
+{
+    httpContext.Response.ContentType = "text/event-stream";
+
+    await foreach (var token in orchestrator.GenerateRecommendationAsync(familyAccountId, memberId, ct))
+    {
+        await httpContext.Response.WriteAsync($"data: {token}\n\n", ct);
+        await httpContext.Response.Body.FlushAsync(ct);
+    }
+});
 
 
 app.MapGet("/", () => Results.Redirect("/swagger"));

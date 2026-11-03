@@ -1,3 +1,5 @@
+using FamilyPulse.Domain.Enums;
+
 namespace FamilyPulse.Domain.Entities;
 
 public enum CheckInType
@@ -12,6 +14,8 @@ public class CheckIn
     public Guid FamilyAccountId { get; private set; }
     public Guid MemberId { get; private set; }
     public CheckInType Type { get; private set; }
+
+    public DomainCategory Category { get; private set; }     // Financial, Education, Marriage, Activities
     
     // Ratings on a 1-5 scale
     public int StressLevel { get; private set; }
