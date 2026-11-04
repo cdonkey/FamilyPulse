@@ -22,6 +22,7 @@ using OpenAI;
 using FamilyPulse.Application.Coaching;
 using FamilyPulse.Infrastructure.Coaching;
 using OpenAI.Chat;
+using System.ClientModel;
 
 
 
@@ -74,15 +75,42 @@ builder.Services.AddScoped<IMemberContextService, MemberContextService>();
 
 builder.Services.AddSingleton<IChatClient>(sp =>
 {
-    var apiKey = builder.Configuration["AI:ApiKey"] ?? "mock-key";
-    var modelId = builder.Configuration["AI:ModelId"] ?? "gpt-4o-mini";
-    
-   var openAiClient = new OpenAIClient(apiKey);
+    //var apiKey = builder.Configuration["AI:ApiKey"] ?? "mock-key";
+    //var modelId = builder.Configuration["AI:ModelId"] ?? "gpt-4o-mini";
 
-    // 2. Wrap directly into OpenAIChatClient (implements IChatClient)
-    
 
-    return new ChatClient(modelId, apiKey).AsIChatClient();
+
+    var apiKey = builder.Configuration["OpenAI:ApiKey"] ?? builder.Configuration["AI:ApiKey"];
+    var modelId = builder.Configuration["OpenAI:ModelId"] ?? builder.Configuration["AI:ModelId"] ?? "gpt-4o-mini";
+    var endpoint = builder.Configuration["OpenAI:Endpoint"] ?? builder.Configuration["AI:Endpoint"] ?? "https://api.groq.com/openai/v1";
+
+
+   
+    // Fall back to null if no valid secret key exists
+    if (string.IsNullOrWhiteSpace(apiKey) || 
+        apiKey == "key_placeholder" || 
+        apiKey == "mock-key")
+    {
+        Console.WriteLine("[Program.cs DI] Key is missing or placeholder. Registering null IChatClient.");
+        return null;
+    }
+
+
+
+   Console.WriteLine($"[Program.cs DI] Successfully instantiated OpenAIChatClient ({modelId})");
+
+   var options = new OpenAIClientOptions();
+    if (!string.IsNullOrWhiteSpace(endpoint))
+    {
+        options.Endpoint = new Uri(endpoint);
+    }
+    
+  var openAiClient = new OpenAIClient(new ApiKeyCredential(apiKey), options);
+
+    // FIX: Wrap the configured openAiClient instance so it uses the Groq endpoint!
+    return openAiClient.GetChatClient(modelId).AsIChatClient();
+
+  
 });
 
 builder.Services.AddScoped<IAiCoachingOrchestrator, AiCoachingOrchestrator>();

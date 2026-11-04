@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using FamilyPulse.Application.Dtos;
+using Microsoft.Extensions.Logging;
 
 namespace FamilyPulse.Infrastructure.Coaching;
 
@@ -16,16 +17,43 @@ public class AiCoachingOrchestrator : IAiCoachingOrchestrator
     private readonly IChatClient? _chatClient;
     private readonly bool _isConfigured;
 
-    public AiCoachingOrchestrator(AppDbContext db, IConfiguration configuration, IChatClient? chatClient = null)
+    private readonly ILogger<AiCoachingOrchestrator>? _logger;
+
+    public AiCoachingOrchestrator(AppDbContext db,
+                                  IConfiguration configuration, 
+                                  IChatClient? chatClient = null,
+                                  ILogger<AiCoachingOrchestrator>? logger = null)
     {
         _db = db;
         _chatClient = chatClient;
+        _logger = logger;
 
-        var apiKey = configuration["OpenAI:ApiKey"] ?? configuration["AI:ApiKey"];
-        _isConfigured = !string.IsNullOrWhiteSpace(apiKey) 
+   var openAiKey = configuration["OpenAI:ApiKey"];
+        var aiKey = configuration["AI:ApiKey"];
+        var apiKey = openAiKey ?? aiKey;
+
+        // Mask sensitive key for safe logging (e.g. "sk-proj-...")
+        var keyPreview = !string.IsNullOrEmpty(apiKey) && apiKey.Length > 7 
+            ? $"{apiKey[..7]}... (len: {apiKey.Length})" 
+            : apiKey ?? "<NULL>";
+
+        _logger?.LogInformation("=== [AiCoachingOrchestrator Diagnostics] ===");
+        _logger?.LogInformation("  - Configuration['OpenAI:ApiKey']: {OpenAiKey}", openAiKey != null ? "FOUND" : "NULL");
+        
+        _logger?.LogInformation("  - Resolved Key Preview: {KeyPreview}", keyPreview);
+        _logger?.LogInformation("  - IChatClient Injected: {HasChatClient} ({Type})", 
+
+            _chatClient != null, 
+            _chatClient?.GetType().Name ?? "null");
+            
+
+        _isConfigured = _chatClient != null 
+                     && !string.IsNullOrWhiteSpace(apiKey) 
                      && apiKey != "key_placeholder" 
-                     && apiKey != "mock-key" 
-                     && _chatClient != null;
+                     && apiKey != "mock-key";
+
+        _logger?.LogInformation("  - Final _isConfigured: {IsConfigured}", _isConfigured);
+        _logger?.LogInformation("===============================================");                      
                      
     }
 
