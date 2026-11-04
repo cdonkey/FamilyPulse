@@ -32,6 +32,7 @@ public class CheckIn
         Guid familyAccountId, 
         Guid memberId, 
         CheckInType type, 
+        DomainCategory category,
         int stressLevel, 
         int closenessLevel, 
         int energyLevel, 
@@ -42,6 +43,7 @@ public class CheckIn
         FamilyAccountId = familyAccountId;
         MemberId = memberId;
         Type = type;
+        Category = category;
         StressLevel = Math.Clamp(stressLevel, 1, 5);
         ClosenessLevel = Math.Clamp(closenessLevel, 1, 5);
         EnergyLevel = Math.Clamp(energyLevel, 1, 5);

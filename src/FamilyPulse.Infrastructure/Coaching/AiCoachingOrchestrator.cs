@@ -22,7 +22,11 @@ public class AiCoachingOrchestrator : IAiCoachingOrchestrator
         _chatClient = chatClient;
 
         var apiKey = configuration["OpenAI:ApiKey"] ?? configuration["AI:ApiKey"];
-        _isConfigured = !string.IsNullOrWhiteSpace(apiKey) && apiKey != "key_placeholder" && _chatClient != null;
+        _isConfigured = !string.IsNullOrWhiteSpace(apiKey) 
+                     && apiKey != "key_placeholder" 
+                     && apiKey != "mock-key" 
+                     && _chatClient != null;
+                     
     }
 
     private const string SystemPrompt = """

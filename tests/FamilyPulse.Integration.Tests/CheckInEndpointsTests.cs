@@ -39,6 +39,7 @@ public class CheckInEndpointsTests : IClassFixture<CustomWebApplicationFactory>
         var command = new CreateCheckInCommand(
             MemberId: memberId,
             Type: CheckInType.WeeklyRoutine,
+            Category: Domain.Enums.DomainCategory.Activities,
             StressLevel: 2,
             ClosenessLevel: 5,
             EnergyLevel: 4,
@@ -100,7 +101,10 @@ public async Task PostCheckIn_WithValidData_Returns201CreatedAndDto()
     {
         // Arrange
         var (familyId, memberId) = await _factory.SeedFamilyAndMemberAsync();
-        var command = new CreateCheckInCommand(memberId, CheckInType.LifeEvent, 4, 3, 2, "Event note", null);
+        var command = new CreateCheckInCommand(memberId,
+         CheckInType.LifeEvent,
+         Domain.Enums.DomainCategory.Activities,
+          4, 3, 2, "Event note", null);
         await _client.PostAsJsonAsync($"/api/families/{familyId}/checkins", command);
 
         // Act

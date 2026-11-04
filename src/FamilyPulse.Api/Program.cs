@@ -230,7 +230,7 @@ app.MapPost("/api/members/{memberId:guid}/memories", async (
 });
 
 
-  app.MapGet("/api/members/{memberId:guid}/coaching/stream", async (
+  /*app.MapGet("/api/members/{memberId:guid}/coaching/stream", async (
     Guid memberId,
     Guid familyAccountId,
     IAiCoachingOrchestrator orchestrator,
@@ -245,6 +245,7 @@ app.MapPost("/api/members/{memberId:guid}/memories", async (
         await httpContext.Response.Body.FlushAsync(ct);
     }
 });
+*/
 
 
 app.MapGet("/", () => Results.Redirect("/swagger"));

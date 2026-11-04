@@ -6,6 +6,8 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.DependencyInjection;
 using  System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.AI;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace FamilyPulse.Testing.Shared;
 
@@ -37,9 +39,15 @@ protected override void ConfigureWebHost(IWebHostBuilder builder)
           {
                  options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
         });
+
+        services.RemoveAll<IChatClient>();
             
             // Program.cs will now execute MigrateAsync() and SeedAsync() automatically when the test server starts!
+
+            
         });
+
+        
     }
 
     // Helper method to seed initial test state

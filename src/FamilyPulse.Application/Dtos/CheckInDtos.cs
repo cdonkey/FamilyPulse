@@ -6,6 +6,7 @@ public record CheckInDto(
     Guid FamilyAccountId,
     Guid MemberId,
     CheckInType Type,
+    Domain.Enums.DomainCategory Category,
     int StressLevel,
     int ClosenessLevel,
     int EnergyLevel,
@@ -17,6 +18,7 @@ public record CheckInDto(
 public record CreateCheckInCommand(
     Guid MemberId,
     CheckInType Type,
+    Domain.Enums.DomainCategory Category,
     int StressLevel,
     int ClosenessLevel,
     int EnergyLevel,
