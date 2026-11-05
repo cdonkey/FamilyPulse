@@ -47,8 +47,10 @@ private static IConfiguration CreateTestConfig(string apiKey = "key_placeholder"
 
         // Seed check-ins across domains
         db.CheckIns.AddRange(
-            new CheckIn(familyAccountId, memberId, CheckInType.WeeklyRoutine, DomainCategory.Marriage, stressLevel: 5,closenessLevel: 3,energyLevel:3, note: "High stress"),
-            new CheckIn(familyAccountId, memberId, CheckInType.WeeklyRoutine, DomainCategory.Financial, stressLevel: 1,closenessLevel: 5,energyLevel:5, note: "All good")
+            new CheckIn(familyAccountId, memberId, CheckInType.WeeklyRoutine, DomainCategory.Marriage, stressLevel: 5,closenessLevel: 3,energyLevel:3, note: "High stress", tags: new List<string> { "work-stress",
+                                                         "sleep-deprived", "schedule-conflict" }),
+            new CheckIn(familyAccountId, memberId, CheckInType.WeeklyRoutine, DomainCategory.Financial, stressLevel: 1,closenessLevel: 5,energyLevel:5, note: "All good", tags: new List<string> { "work-stress",
+                                                         "sleep-deprived", "schedule-conflict" })
         );
         await db.SaveChangesAsync();
 
