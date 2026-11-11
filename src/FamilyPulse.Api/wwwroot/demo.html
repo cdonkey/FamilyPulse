@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FamilyPulse - AI Coaching Demo</title>
+    <!-- Marked.js CDN for live Markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #16a34a;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #0f172a;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1000px;
+            margin: 30px auto;
+            padding: 0 20px;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .section-card h2 {
+            margin-top: 0;
+            font-size: 1.25rem;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 10px 18px;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .btn-secondary { background: #e2e8f0; color: #334155; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+        /* Output containers */
+        .family-display, .checkin-grid {
+            margin-top: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 12px;
+        }
+
+        .card-item {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        #stream-output {
+            min-height: 160px;
+            border-top: 1px solid var(--border);
+            margin-top: 16px;
+            padding-top: 16px;
+        }
+
+        .status-badge {
+            font-size: 0.85em;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #64748b;
+        }
+        .status-badge.active { color: var(--success); }
+
+        /*create family */
+
+        .family-banner {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.family-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #1e40af;
+}
+
+.id-badge {
+    background: #e2e8f0;
+    color: #475569;
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    user-select: all; /* Allows 1-click copy */
+}
+
+.member-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    cursor: pointer; /* Keep cursor pointer here to avoid inline HTML styles */
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+.member-card.selected {
+    border: 2px solid var(--primary);
+    background: #f8fafc;
+}
+
+
+
+
+.member-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.member-role {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--primary);
+}
+
+.member-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+/* Demographics Control Bar */
+.config-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    background: #f1f5f9;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.config-group { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.9em; }
+.select-input { padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; }
+.checkbox-input { width: 18px; height: 18px; cursor: pointer; }
+
+/* Gender Color Accents */
+
+.member-card.female { border-top: 4px solid #ec4899; }
+.member-card.male   { border-top: 4px solid #3b82f6; }
+
+.member-card.female.selected {
+    border: 2px solid #ec4899;
+    background: #fdf2f8;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25);
+}
+
+/* Male Selected State (Blue Highlight Ring & Border) */
+.member-card.male.selected {
+    border: 2px solid #3b82f6;
+    background: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+}
+
+/* Role & Demographic Badges */
+.badge-group { display: flex; gap: 6px; align-items: center; }
+.gender-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+}
+.gender-badge.female { background: #fce7f3; color: #be185d; }
+.gender-badge.male { background: #dbeafe; color: #1e40af; }
+
+.teen-badge {
+    background: #fef08a;
+    color: #854d0e;
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+}
+
+
+
+
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>FamilyPulse</h1>
+    <p class="subtitle">Interactive AI Family Coaching & Systemic Telemetry Engine</p>
+</div>
+
+    <!-- SECTION 1: Family Generation -->
+   <div class="section-card">
+    <h2>1. Virtual Family Setup</h2>
+    <p>Configure household demographics and click to register a live family entity.</p>
+    
+    <!-- Controls Bar -->
+    <div class="config-bar">
+        <div class="config-group">
+            <label>Number of Children:</label>
+            <select id="childCountSelect" class="select-input">
+                <option value="1">1 Child</option>
+                <option value="2" selected>2 Children</option>
+                <option value="3">3 Children</option>
+                <option value="4">3 Children</option>
+            </select>
+        </div>
+
+        <div class="config-group">
+            <label>Include Teenager?</label>
+            <input type="checkbox" id="includeTeenCheckbox" checked class="checkbox-input">
+        </div>
+
+        <button class="btn btn-primary" id="btnGenerateFamily" onclick="generateFamily()">
+            🏠 Register & Generate Family
+        </button>
+    </div>
+
+    <!-- Output Container -->
+    <div id="familyContainer" class="family-display"></div>
+</div>
+
+    <!-- SECTION 2: Check-in Telemetry -->
+    <div class="section-card">
+        <h2>2. Check-In Telemetry</h2>
+        <p>Add telemetry manually or auto-generate randomized check-ins across family members.</p>
+        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
+            <button class="btn btn-secondary" onclick="generateRandomCheckIn()">🎲 Add Random Check-In</button>
+            <button class="btn btn-secondary" onclick="toggleManualForm()">📝 Manual Entry</button>
+        </div>
+        <div id="checkInContainer" class="checkin-grid">
+            <!-- Populated on Day 3 -->
+        </div>
+    </div>
+
+    <!-- SECTION 3: AI Coaching Stream -->
+    <div class="section-card">
+        <h2>3. Real-Time AI Coaching Report</h2>
+        <p>Trigger the `AiCoachingOrchestrator` to stream live Markdown advice based on logged telemetry.</p>
+        <button class="btn btn-primary" id="btnStreamAdvice" onclick="startCoachingStream()" disabled>
+            🤖 Generate Live AI Coaching Stream
+        </button>
+        <div id="streamStatus" class="status-badge" style="margin-top: 12px;">Status: Awaiting Family Setup</div>
+        <div id="stream-output">
+            <em>Click "Generate Live AI Coaching Stream" once a family is generated...</em>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let activeFamily = null;      // Holds full family object { id, name, location, members }
+        let activeMemberId = null;    // Tracks currently targeted member for check-ins & coaching
+        let checkIns = [];
+
+
+        const API_BASE = '/api';
+
+        function getRandomLandmark() {
+           const landmarks = [
+            "Whispering Pines #108", 
+            "Cozy Haven #402", 
+            "Sunnyvale Residence #24", 
+            "Cedar Crest #77",
+             "Maplewood Retreat #15"
+       ];
+    return landmarks[Math.floor(Math.random() * landmarks.length)];
+}
+
+
+function getRandomFamilyName() {
+    const surnames = ["Miller", "Johnson", "Davis", "Chen", "Patel", "Garcia", "Taylor", "Anderson"];
+    const randomSurname = surnames[Math.floor(Math.random() * surnames.length)];
+    return `The ${randomSurname} Family`;
+}
+
+function buildHouseholdConfig() {
+    const childCount = parseInt(document.getElementById('childCountSelect').value, 10);
+    const hasTeen = document.getElementById('includeTeenCheckbox').checked;
+
+    // 1. Default Parents (Mother & Father)
+    const members = [
+        { name: "Elena (Mother)", role: "Parent", gender: "female", isTeen: false },
+        { name: "Marcus (Father)", role: "Parent", gender: "male", isTeen: false }
+    ];
+
+    // 2. Generate Children based on user selection
+    const childPool = [
+        { name: "Maya", gender: "female" },
+        { name: "Leo", gender: "male" },
+        { name: "Sofia", gender: "female" }
+    ];
+
+    for (let i = 0; i < childCount; i++) {
+        const poolItem = childPool[i % childPool.length];
+        const isThisTeen = (i === 0 && hasTeen); // Assign teen flag to first child if checked
+
+        members.push({
+            name: `${poolItem.name} (${isThisTeen ? 'Teen' : 'Child'})`,
+            role: "Child",
+            gender: poolItem.gender,
+            isTeen: isThisTeen
+        });
+    }
+
+    return members;
+}
+
+async function generateFamily() {
+    const btn = document.getElementById('btnGenerateFamily');
+    const container = document.getElementById('familyContainer');
+    const status = document.getElementById('streamStatus');
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Registering Family...';
+
+    try {
+        // --- STEP 1: Register Account ---
+        const randomLandmark = getRandomLandmark();
+        const regResponse = await fetch('/api/identity/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ virtualLandmarkId: randomLandmark, customPassphrase: null })
+        });
+
+        const regData = await regResponse.json();
+        if (!regResponse.ok) throw new Error(regData.error || "Registration failed");
+
+        // --- STEP 2: Create Custom Members ---
+        const memberSpecs = buildHouseholdConfig();
+        const createdMembers = [];
+
+        for (const spec of memberSpecs) {
+            const memberResponse = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    familyAccountId: regData.familyId,
+                    name: spec.name,
+                    role: spec.role
+                })
+            });
+
+            const mData = memberResponse.ok ? await memberResponse.json() : null;
+            
+            createdMembers.push({
+                id: mData?.id || crypto.randomUUID(),
+                name: spec.name,
+                role: spec.role,
+                gender: spec.gender,
+                isTeen: spec.isTeen
+            });
+        }
+
+        const humanName = getRandomFamilyName();
+
+        // Store active family state
+        activeFamily = {
+            id: regData.familyId,
+            name: humanName, // Friendly display name
+            virtualLandmarkId: randomLandmark,
+            passphrase: regData.passphrase,
+            members: createdMembers
+        };
+
+        // Select first parent by default
+        activeMemberId = createdMembers[0].id;
+
+        // Render card layout
+        renderFamilyView(activeFamily);
+
+        status.textContent = `Ready: Family "${randomLandmark}" Created (${createdMembers.length} Members)`;
+        status.className = "status-badge active";
+
+    } catch (err) {
+        container.innerHTML = `<div style="color:#dc2626; padding:12px; background:#fef2f2;">⚠️ ${err.message}</div>`;
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '🔄 Register & Generate Family';
+    }
+}
+
+function renderFamilyView(family) {
+    const container = document.getElementById('familyContainer');
+
+    // Clean, human-friendly family banner
+    let html = `
+        <div class="family-banner" style="grid-column: 1 / -1;">
+            <div>
+                <div class="family-title">🏠 ${family.name || 'The Family Household'}</div>
+                <small style="color: #64748b;">Active Household Context</small>
+            </div>
+            <div>
+                <span class="id-badge" title="Backend Family ID: ${family.id}">ID: ${family.id.substring(0, 8)}...</span>
+            </div>
+        </div>
+    `;
+
+    family.members.forEach(m => {
+        const isSelected = m.id === activeMemberId;
+        const genderClass = m.gender === 'female' ? 'female' : 'male';
+        
+        html += `
+            <div class="member-card ${genderClass} ${isSelected ? 'selected' : ''}" onclick="selectMember('${m.id}')">
+                <div class="member-header">
+                    <div class="badge-group">
+                        <span class="gender-badge ${genderClass}">${m.gender}</span>
+                        ${m.isTeen ? '<span class="teen-badge">⚡ TEEN</span>' : ''}
+                    </div>
+                    <span class="id-badge" title="Member ID">${m.id.substring(0, 8)}...</span>
+                </div>
+                <div class="member-name">${m.name}</div>
+                <small style="color: #64748b;">Role: ${m.role} ${isSelected ? ' • [Selected Member]' : ''}</small>
+            </div>
+        `;
+    });
+
+    container.innerHTML = html;
+}
+
+function selectMember(memberId) {
+    activeMemberId = memberId;
+    if (activeFamily) {
+        renderFamilyView(activeFamily);
+    }
+}
+
+        function generateRandomCheckIn() {
+            // Day 3 Logic Target
+            console.log("Adding random check-in...");
+        }
+
+        function toggleManualForm() {
+            // Day 3 Logic Target
+        }
+
+        function startCoachingStream() {
+            // Day 4 Logic Target
+            console.log("Starting SSE stream...");
+        }
+    </script>
+</body>
+</html>

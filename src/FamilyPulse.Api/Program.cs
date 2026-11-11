@@ -274,9 +274,21 @@ app.MapPost("/api/members/{memberId:guid}/memories", async (
     }
 });
 */
-
+app.MapGet("/demo", async context =>
+{
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "demo.html"));
+});
 
 app.MapGet("/", () => Results.Redirect("/swagger"));
+
+
+app.MapGet("/test", async context =>
+{
+    context.Response.ContentType = "text/html";
+    await context.Response.SendFileAsync(Path.Combine(app.Environment.WebRootPath, "index.html"));
+});
+
 
 
 

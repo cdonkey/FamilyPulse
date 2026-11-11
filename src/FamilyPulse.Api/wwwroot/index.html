@@ -211,10 +211,93 @@
       <tbody id="member-table-body"></tbody>
     </table>
   </div>
+
+
+<!--4. FamilyPulse Dashboard -->
+
+<!--
+  
+
+  <div class="card">
+        <h2>4. FamilyPulse Dashboard</h2>
+        <div class="controls">
+            <input type="text" id="familyAccountId" placeholder="Family Account ID (GUID)" value="11111111-1111-1111-1111-111111111111">
+            <input type="text" id="memberId" placeholder="Member ID (GUID)" value="22222222-2222-2222-2222-222222222222">
+            <button id="streamBtn" onclick="startCoachingStream()">Stream Advice</button>
+        </div>
+
+        <div id="status" class="status">Status: Idle</div>
+        <div id="output"><em>Click "Stream Advice" to generate real-time AI coaching...</em></div>
+    </div>
+
+-->
+
+
+
 </div>
+
 
 <script>
   let currentHouseKeyJson = "";
+  
+
+  let activeEventSource = null;
+
+        function startCoachingStream() {
+            const familyAccountId = document.getElementById('familyAccountId').value.trim();
+            const memberId = document.getElementById('memberId').value.trim();
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            const btn = document.getElementById('streamBtn');
+
+            if (!memberId || !familyAccountId) {
+                alert('Please provide both Family Account ID and Member ID');
+                return;
+            }
+
+            // Close existing connection if active
+            if (activeEventSource) {
+                activeEventSource.close();
+            }
+
+            let markdownBuffer = "";
+            output.innerHTML = "";
+            status.textContent = "Status: Connecting...";
+            status.className = "status active";
+            btn.disabled = true;
+
+            // Target ASP.NET Core SSE Endpoint
+            const streamUrl = `http://localhost:5000/api/members/${memberId}/coaching/stream?familyAccountId=${familyAccountId}`;
+
+            activeEventSource = new EventSource(streamUrl);
+
+            // Triggered on connection established
+            activeEventSource.onopen = () => {
+                status.textContent = "Status: Streaming Live Tokens...";
+            };
+
+            // Triggered on every 'data: <chunk>\n\n' frame from ASP.NET Core
+            activeEventSource.onmessage = (event) => {
+                // Append token delta to local string buffer
+                markdownBuffer += event.data;
+
+                // Re-render cumulative buffer into innerHTML using marked.js
+                output.innerHTML = marked.parse(markdownBuffer);
+            };
+
+            // Triggered when backend finishes streaming or network drops
+            activeEventSource.onerror = (err) => {
+                status.textContent = "Status: Stream Finished";
+                status.className = "status";
+                btn.disabled = false;
+
+                // Close client connection to prevent auto-reconnect loops
+                if (activeEventSource) {
+                    activeEventSource.close();
+                    activeEventSource = null;
+                }
+            };
+        }
 
   // Helper to set active family ID across sections
   function setActiveFamilyId(familyId) {
