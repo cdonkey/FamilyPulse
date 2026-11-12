@@ -5,7 +5,9 @@ namespace FamilyPulse.Domain.Entities;
 public enum CheckInType
 {
     WeeklyRoutine = 0,
-    LifeEvent = 1
+    LifeEvent = 1,
+
+
 }
 
 public class CheckIn

@@ -216,6 +216,162 @@
     letter-spacing: 0.05em;
 }
 
+.manual-form {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 18px;
+}
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.sliders-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 12px;
+    background: white;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+}
+.sliders-grid input[type="range"] { width: 100%; cursor: pointer; }
+.full-width, .text-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    box-sizing: border-box;
+    margin-top: 4px;
+}
+
+.checkin-card {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-left: 4px solid #64748b;
+    border-radius: 8px;
+    padding: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+.checkin-card.female { border-left-color: #ec4899; }
+.checkin-card.male   { border-left-color: #3b82f6; }
+
+.ci-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.ci-meta {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #475569;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+.metrics-row {
+    display: flex;
+    gap: 6px;
+    margin: 10px 0;
+    flex-wrap: wrap;
+}
+.metric-pill {
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 999px;
+}
+.pill-good { background: #dcfce7; color: #166534; }
+.pill-warn { background: #fef9c3; color: #854d0e; }
+.pill-bad  { background: #fee2e2; color: #991b1b; }
+
+.ci-note {
+    font-style: italic;
+    font-size: 0.9rem;
+    color: #334155;
+    margin: 8px 0;
+}
+.tag-chip {
+    display: inline-block;
+    background: #e2e8f0;
+    color: #334155;
+    font-family: monospace;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-right: 4px;
+    margin-top: 4px;
+}
+
+
+/* Day 4: Live AI Coaching Report Styling */
+#stream-output {
+    min-height: 160px;
+    border-top: 1px solid var(--border);
+    margin-top: 16px;
+    padding: 20px 24px;
+    background: #ffffff;
+    border-radius: 8px;
+    line-height: 1.65;
+    color: #1e293b;
+}
+
+#stream-output h1,
+#stream-output h2,
+#stream-output h3 {
+    color: #0f172a;
+    margin-top: 1.25em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 4px;
+}
+
+#stream-output h1:first-child,
+#stream-output h2:first-child,
+#stream-output h3:first-child {
+    margin-top: 0;
+}
+
+#stream-output ul,
+#stream-output ol {
+    padding-left: 22px;
+    margin: 10px 0;
+}
+
+#stream-output li {
+    margin-bottom: 6px;
+}
+
+#stream-output blockquote {
+    border-left: 4px solid var(--primary);
+    background: #eff6ff;
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 6px 6px 0;
+    color: #1e3a8a;
+}
+
+#stream-output strong {
+    color: #0f172a;
+}
+
+/* Subtle pulsing indicator while tokens are actively arriving */
+#stream-output.streaming::after {
+    content: "▋";
+    display: inline-block;
+    color: var(--primary);
+    animation: blink 1s step-end infinite;
+    margin-left: 4px;
+}
+
+@keyframes blink {
+    50% { opacity: 0; }
+}
+
 
 
 
@@ -259,18 +415,82 @@
     <div id="familyContainer" class="family-display"></div>
 </div>
 
-    <!-- SECTION 2: Check-in Telemetry -->
-    <div class="section-card">
-        <h2>2. Check-In Telemetry</h2>
-        <p>Add telemetry manually or auto-generate randomized check-ins across family members.</p>
-        <div style="display: flex; gap: 10px; margin-bottom: 12px;">
-            <button class="btn btn-secondary" onclick="generateRandomCheckIn()">🎲 Add Random Check-In</button>
-            <button class="btn btn-secondary" onclick="toggleManualForm()">📝 Manual Entry</button>
+   <!-- SECTION 2: Check-in Telemetry -->
+<div class="section-card">
+    <h2>2. Check-In Telemetry</h2>
+    <p>Generate realistic telemetry snapshots or manually log a check-in for the selected family member.</p>
+
+    <!-- Action Bar -->
+    <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px;">
+        <button class="btn btn-primary" onclick="addRandomCheckIn()">🎲 Add Random Check-In</button>
+        <button class="btn btn-secondary" onclick="toggleManualForm()">📝 Manual Entry</button>
+    </div>
+
+    <!-- Collapsible Manual Entry Form -->
+    <div id="manualCheckInForm" class="manual-form" style="display: none;">
+        <div style="margin-bottom: 12px; font-weight: 600; color: var(--primary);">
+            Logging Check-In for: <span id="manualTargetMemberName">Selected Member</span>
         </div>
-        <div id="checkInContainer" class="checkin-grid">
-            <!-- Populated on Day 3 -->
+
+        <div class="form-grid">
+            <div>
+                <label>Check-In Type</label>
+                <select id="ciType" class="select-input full-width">
+                    <option value="WeeklyRoutine">WeeklyRoutine</option>
+                    <option value="DailyPulse">DailyPulse</option>
+                    <option value="FrictionEvent">FrictionEvent</option>
+                    <option value="Milestone">Milestone</option>
+                </select>
+            </div>
+            <div>
+                <label>Category</label>
+                <select id="ciCategory" class="select-input full-width">
+                    <option value="Financial">Financial</option>
+                    <option value="WorkLifeBalance">WorkLifeBalance</option>
+                    <option value="Parenting">Parenting</option>
+                    <option value="Communication">Communication</option>
+                    <option value="Health">Health</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="sliders-grid">
+            <div>
+                <label>Stress Level: <strong id="valStress">3</strong>/5</label>
+                <input type="range" id="ciStress" min="1" max="5" value="3" oninput="document.getElementById('valStress').textContent = this.value">
+            </div>
+            <div>
+                <label>Closeness Level: <strong id="valCloseness">3</strong>/5</label>
+                <input type="range" id="ciCloseness" min="1" max="5" value="3" oninput="document.getElementById('valCloseness').textContent = this.value">
+            </div>
+            <div>
+                <label>Energy Level: <strong id="valEnergy">3</strong>/5</label>
+                <input type="range" id="ciEnergy" min="1" max="5" value="3" oninput="document.getElementById('valEnergy').textContent = this.value">
+            </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 12px;">
+            <div>
+                <label>Note</label>
+                <input type="text" id="ciNote" class="text-input" placeholder="e.g., Tight budget this month after car repair">
+            </div>
+            <div>
+                <label>Tags (comma-separated)</label>
+                <input type="text" id="ciTags" class="text-input" placeholder="e.g., budget, overtime, tired">
+            </div>
+        </div>
+
+        <div style="margin-top: 14px; display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="submitManualCheckIn()">Save Check-In</button>
+            <button class="btn btn-secondary" onclick="toggleManualForm()">Cancel</button>
         </div>
     </div>
+
+    <!-- Created Check-Ins Feed -->
+    <div id="checkInContainer" class="checkin-grid">
+        <em style="color: #64748b; grid-column: 1 / -1;">No check-ins logged yet. Generate a family first, then add telemetry above.</em>
+    </div>
+</div>
 
     <!-- SECTION 3: AI Coaching Stream -->
     <div class="section-card">
@@ -291,8 +511,15 @@
         let activeMemberId = null;    // Tracks currently targeted member for check-ins & coaching
         let checkIns = [];
 
+        let loggedCheckIns = [];
+
+        let activeEventSource = null;
+
+
 
         const API_BASE = '/api';
+        //  note familyId is changing
+        CHECKINS_API_URL = '/api/families/familyId/checkins';
 
         function getRandomLandmark() {
            const landmarks = [
@@ -352,6 +579,12 @@ async function generateFamily() {
     btn.disabled = true;
     btn.textContent = '⏳ Registering Family...';
 
+
+    loggedCheckIns = []; 
+    renderCheckIns();
+    document.getElementById('stream-output').innerHTML = 
+    `<em>Click "Generate Live AI Coaching Stream" to analyze the new family...</em>`;
+
     try {
         // --- STEP 1: Register Account ---
         const randomLandmark = getRandomLandmark();
@@ -369,7 +602,12 @@ async function generateFamily() {
         const createdMembers = [];
 
         for (const spec of memberSpecs) {
-            const memberResponse = await fetch('/api/members', {
+
+
+           let membersUrl =  `/api/families/${regData.familyId}/members`;
+
+
+            const memberResponse = await fetch(membersUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -401,6 +639,10 @@ async function generateFamily() {
             members: createdMembers
         };
 
+        //set checkin api url
+        CHECKINS_API_URL = `/api/families/${activeFamily.id}/checkins`;
+        
+
         // Select first parent by default
         activeMemberId = createdMembers[0].id;
 
@@ -426,10 +668,10 @@ function renderFamilyView(family) {
         <div class="family-banner" style="grid-column: 1 / -1;">
             <div>
                 <div class="family-title">🏠 ${family.name || 'The Family Household'}</div>
-                <small style="color: #64748b;">Active Household Context</small>
+                <small style="color: #64748b;">Selected Household </small>
             </div>
             <div>
-                <span class="id-badge" title="Backend Family ID: ${family.id}">ID: ${family.id.substring(0, 8)}...</span>
+                <span class="id-badge" title="Backend Family ID: ${family.id}">ID: ${family.id}</span>
             </div>
         </div>
     `;
@@ -460,22 +702,344 @@ function selectMember(memberId) {
     activeMemberId = memberId;
     if (activeFamily) {
         renderFamilyView(activeFamily);
+        updateManualFormTargetLabel();
     }
 }
 
-        function generateRandomCheckIn() {
-            // Day 3 Logic Target
-            console.log("Adding random check-in...");
+function categoryToInt(category){
+
+
+   let retVal = 1;
+
+
+ switch (category) {
+  case "WorkLifeBalance":     
+  case "Health":
+  case "Financial":
+    retVal = 1;
+    break;
+  case "Parenting": 
+  case "Education":
+    retVal = 2;
+    break;
+  case "Communication":
+  case "Marriage":    
+    retVal = 3;
+    break;
+    
+  case "Activities":
+     retVal = 4;
+    break;    
+  default:
+    retVal = 1;
+}
+
+return retVal;
+
+}
+
+function typeToInt(inType)
+{
+  let retVal = 0;
+  switch (inType) {
+
+  case "WeeklyRoutine":
+    retvalue = 0;
+    break;
+
+  case "DailyPulse":  
+  case "LifeEvent":
+    retvalue = 1;
+    break;  
+
+  default:
+    retVal = 0;
+}
+    return retVal;
+} 
+
+
+
+
+
+ /*check ins logic*/
+  // Realistic presets so random check-ins give the AI rich systemic context
+const RANDOM_SCENARIOS = {
+    Parent: [
+        { type: typeToInt("WeeklyRoutine"), category: categoryToInt("Financial"), stress: 4, closeness: 2, energy: 2, note: "Worried about upcoming utility bills and school expenses.", tags: ["budget", "overtime", "financial-stress"] },
+        { type: typeToInt("DailyPulse"), category: categoryToInt("WorkLifeBalance"), stress: 5, closeness: 2, energy: 1, note: "Back-to-back late shifts, barely had 15 minutes to talk tonight.", tags: ["burnout", "late-shift", "exhausted"] },
+        { type: typeToInt("WeeklyRoutine"), category: categoryToInt("Parenting"), stress: 2, closeness: 5, energy: 4, note: "Great family dinner and board game night, everyone felt connected.", tags: ["quality-time", "connected", "calm"] }
+    ],
+    Child: [
+        { type: typeToInt("DailyPulse"), category: categoryToInt("Communication"), stress: 4, closeness: 2, energy: 2, note: "Heavy exam week and feeling pressured about grades.", tags: ["exams", "school-stress", "need-space"] },
+        { type: typeToInt("WeeklyRoutine"), category: categoryToInt("Health"), stress: 2, closeness: 4, energy: 5, note: "Had a great soccer practice and talked about weekend plans.", tags: ["sports", "energetic", "happy"] }
+    ]
+};
+
+function toggleManualForm() {
+    if (!activeFamily) {
+        alert("Please register a virtual family in Section 1 first.");
+        return;
+    }
+
+
+
+    const form = document.getElementById('manualCheckInForm');
+    const isHidden = form.style.display === 'none';
+    form.style.display = isHidden ? 'block' : 'none';
+    updateManualFormTargetLabel();
+}
+
+function updateManualFormTargetLabel() {
+    if (!activeFamily || !activeMemberId) return;
+    const member = activeFamily.members.find(m => m.id === activeMemberId);
+    const label = document.getElementById('manualTargetMemberName');
+    if (member && label) {
+        label.textContent = `${member.name} (${member.role})`;
+    }
+}
+
+// 1. Random Check-In Generator (cycles through family members or uses selected)
+async function addRandomCheckIn() {
+    if (!activeFamily || !activeFamily.members.length) {
+        alert("Please register a virtual family in Section 1 first.");
+        return;
+    }
+
+     CHECKINS_API_URL = `/api/families/${activeFamily.id}/checkins`;
+     document.getElementById('btnStreamAdvice').disabled = false
+
+    // Rotate through members so multiple clicks build a family-wide picture
+    const targetMember = activeFamily.members[loggedCheckIns.length % activeFamily.members.length];
+    const pool = RANDOM_SCENARIOS[targetMember.role] || RANDOM_SCENARIOS.Parent;
+    const template = pool[Math.floor(Math.random() * pool.length)];
+
+    
+
+    const payload = {
+        //id: crypto.randomUUID(),
+        //familyAccountId: activeFamily.id,
+        memberId: targetMember.id,
+        type: template.type,
+        category: template.category,
+        stressLevel: template.stress,
+        closenessLevel: template.closeness,
+        energyLevel: template.energy,
+        note: template.note,
+        tags: template.tags,
+        //createdAtUtc: new Date().toISOString()
+    };
+
+    
+
+    await postAndRenderCheckIn(payload, targetMember);
+}
+
+// 2. Manual Form Submission
+async function submitManualCheckIn() {
+    if (!activeFamily || !activeMemberId) return;
+
+    const targetMember = activeFamily.members.find(m => m.id === activeMemberId);
+    const rawTags = document.getElementById('ciTags').value;
+    const parsedTags = rawTags
+        .split(',')
+        .map(t => t.trim().replace(/^#/, ''))
+        .filter(t => t.length > 0);
+
+    const payload = {
+        id: crypto.randomUUID(),
+        familyAccountId: activeFamily.id,
+        memberId: targetMember.id,
+        type: typeToInt(document.getElementById('ciType').value),
+        category: categoryToInt(document.getElementById('ciCategory').value),
+        stressLevel: parseInt(document.getElementById('ciStress').value, 10),
+        closenessLevel: parseInt(document.getElementById('ciCloseness').value, 10),
+        energyLevel: parseInt(document.getElementById('ciEnergy').value, 10),
+        note: document.getElementById('ciNote').value.trim() || "Routine check-in logged.",
+        tags: parsedTags.length > 0 ? parsedTags : ["routine"],
+        createdAtUtc: new Date().toISOString()
+    };
+
+    await postAndRenderCheckIn(payload, targetMember);
+    document.getElementById('manualCheckInForm').style.display = 'none';
+    document.getElementById('ciNote').value = '';
+    document.getElementById('ciTags').value = '';
+
+    document.getElementById('btnStreamAdvice').disabled = false    
+}
+
+// 3. Shared API POST + UI State Update
+async function postAndRenderCheckIn(payload, member) {
+    
+    
+    try {
+        const response = await fetch(CHECKINS_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            throw new Error(`API Error (${response.status}): ${errText}`);
         }
 
-        function toggleManualForm() {
-            // Day 3 Logic Target
+        // Use server-returned object if available, otherwise fallback to sent payload
+        const text = await response.text();
+        const savedCheckIn = text ? JSON.parse(text) : payload;
+
+        loggedCheckIns.unshift({
+            ...savedCheckIn,
+            memberName: member.name,
+            memberGender: member.gender
+        });
+
+        renderCheckIns();
+
+        // Enable Section 3 AI Coaching Stream button now that telemetry exists
+        const streamBtn = document.getElementById('btnStreamAdvice');
+        if (streamBtn) streamBtn.disabled = false;
+
+    } catch (err) {
+        console.error("Check-In submission failed:", err);
+        alert(`Failed to save check-in: ${err.message}`);
+    }
+}
+
+// 4. Render Check-In Cards
+function renderCheckIns() {
+    const container = document.getElementById('checkInContainer');
+    if (loggedCheckIns.length === 0) {
+        container.innerHTML = `<em style="color: #64748b; grid-column: 1 / -1;">No check-ins logged yet.</em>`;
+        return;
+    }
+
+    container.innerHTML = loggedCheckIns.map(ci => {
+        // Color-coding helpers (Stress: lower is better; Closeness/Energy: higher is better)
+        const stressClass = ci.stressLevel >= 4 ? 'pill-bad' : (ci.stressLevel === 3 ? 'pill-warn' : 'pill-good');
+        const closeClass  = ci.closenessLevel >= 4 ? 'pill-good' : (ci.closenessLevel === 3 ? 'pill-warn' : 'pill-bad');
+        const energyClass = ci.energyLevel >= 4 ? 'pill-good' : (ci.energyLevel === 3 ? 'pill-warn' : 'pill-bad');
+
+        const tagsHtml = (ci.tags || []).map(t => `<span class="tag-chip">#${t}</span>`).join('');
+        const timeStr = new Date(ci.createdAtUtc).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        return `
+            <div class="checkin-card ${ci.memberGender || ''}">
+                <div class="ci-header">
+                    <strong>${ci.memberName || 'Family Member'}</strong>
+                    <span class="ci-meta">${ci.category} • ${ci.type}</span>
+                </div>
+                <div class="metrics-row">
+                    <span class="metric-pill ${stressClass}">Stress: ${ci.stressLevel}/5</span>
+                    <span class="metric-pill ${closeClass}">Closeness: ${ci.closenessLevel}/5</span>
+                    <span class="metric-pill ${energyClass}">Energy: ${ci.energyLevel}/5</span>
+                </div>
+                <div class="ci-note">"${ci.note}"</div>
+                <div>${tagsHtml}</div>
+                <div style="text-align: right; margin-top: 8px;">
+                    <small style="color: #94a3b8; font-size: 0.72rem;">Logged at ${timeStr}</small>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+       
+       
+
+
+
+
+
+
+
+
+
+function startCoachingStream() {
+    if (!activeFamily || !activeMemberId) {
+        alert("Please register a virtual family and select a member first.");
+        return;
+    }
+
+    const targetMember = activeFamily.members.find(m => m.id === activeMemberId);
+    const memberLabel = targetMember ? targetMember.name : "Selected Member";
+
+    const btn = document.getElementById('btnStreamAdvice');
+    const status = document.getElementById('streamStatus');
+    const output = document.getElementById('stream-output');
+
+    // Close any prior SSE connection before starting a new one
+    if (activeEventSource) {
+        activeEventSource.close();
+        activeEventSource = null;
+    }
+
+    let markdownBuffer = "";
+    btn.disabled = true;
+    btn.textContent = "⏳ Streaming AI Analysis...";
+    status.textContent = `Status: Connecting to AI Coach for ${memberLabel}...`;
+    status.className = "status-badge active";
+
+    output.classList.add('streaming');
+    output.innerHTML = `<em style="color: #64748b;">Analyzing family telemetry and relational context for ${memberLabel}...</em>`;
+
+    // Connect to ASP.NET Core SSE Endpoint
+    const streamUrl = `/api/members/${activeMemberId}/coaching/stream?familyAccountId=${activeFamily.id}`;
+    activeEventSource = new EventSource(streamUrl);
+
+    activeEventSource.onopen = () => {
+        status.textContent = `Status: Streaming Live Insights for ${memberLabel}...`;
+    };
+
+    activeEventSource.onmessage = (event) => {
+        // Ignore optional SSE completion sentinel if your backend sends [DONE]
+        if (event.data === "[DONE]") {
+            finishStream(true);
+            return;
         }
 
-        function startCoachingStream() {
-            // Day 4 Logic Target
-            console.log("Starting SSE stream...");
+        markdownBuffer += event.data;
+        output.innerHTML = marked.parse(markdownBuffer);
+    };
+
+    activeEventSource.onerror = () => {
+        // Native EventSource triggers onerror when the server closes the stream at the end.
+        // If tokens were already received, treat this as a normal completion.
+        const receivedContent = markdownBuffer.trim().length > 0;
+        finishStream(receivedContent);
+    };
+
+    function finishStream(isSuccess) {
+        if (activeEventSource) {
+            activeEventSource.close();
+            activeEventSource = null;
         }
+
+        output.classList.remove('streaming');
+        btn.disabled = false;
+        btn.textContent = "🔄 Regenerate AI Coaching Stream";
+
+        if (isSuccess) {
+            status.textContent = `Status: ✅ Systemic Report Complete (${memberLabel})`;
+            status.className = "status-badge active";
+        } else {
+            status.textContent = "Status: ⚠️ Stream Failed";
+            status.className = "status-badge";
+            output.innerHTML = `
+                <div style="color: #dc2626; background: #fef2f2; border: 1px solid #fca5a5; padding: 12px; border-radius: 6px;">
+                    <strong>Unable to stream coaching response.</strong><br>
+                    Verify that your ASP.NET Core API is running and your AI provider key (Groq/OpenAI) is configured.
+                </div>
+            `;
+        }
+    }
+}
+
+
+
+
+
+
     </script>
 </body>
 </html>
