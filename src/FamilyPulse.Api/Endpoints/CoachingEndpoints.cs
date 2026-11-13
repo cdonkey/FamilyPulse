@@ -18,7 +18,8 @@ public static class CoachingEndpoints
             // Correct: Use 'await foreach' for IAsyncEnumerable
             await foreach (var chunk in orchestrator.GenerateRecommendationAsync(familyAccountId, memberId, ct))
             {
-                await httpContext.Response.WriteAsync($"data: {chunk}\n\n", ct);
+                var jsonChunk = System.Text.Json.JsonSerializer.Serialize(chunk);
+                await httpContext.Response.WriteAsync($"data: {jsonChunk}\n\n", ct);
                 await httpContext.Response.Body.FlushAsync(ct);
             }
         });

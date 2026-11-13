@@ -88,7 +88,7 @@ public class AiCoachingOrchestrator : IAiCoachingOrchestrator
         var options = new ChatOptions
         {
             Temperature = 0.3f,
-            MaxOutputTokens = 600
+            MaxOutputTokens = 1000
         };
 
         await foreach (var update in _chatClient.GetStreamingResponseAsync(messages, options, ct))
@@ -123,10 +123,14 @@ public class AiCoachingOrchestrator : IAiCoachingOrchestrator
             - Keep the tone compassionate, direct, and practical.
 
             OUTPUT FORMAT REQUIREMENTS:
+            When summarizing metrics in a table, use warm, human-friendly column headers like 'Area | Current Level | What This Means' and avoid technical scale notation like '(-5 -> +5)'
+
             Always format your output in Markdown with these exact three sections:
 
             ### 1. Systemic Diagnosis
-            Analyze overall equilibrium based on numerical scores (Stress, Closeness, Energy).
+            Analyze overall equilibrium based on numerical scores (Stress, Closeness, Energy). In place of numerical output 3/4 
+            1/5 -2/2 etc use rather words that match that score.
+            
 
             ### 2. Multiplier Dynamics
             - **Primary Anchor:** Identify the highest-scoring domain and explain how to leverage it as an emotional stabilizer.
