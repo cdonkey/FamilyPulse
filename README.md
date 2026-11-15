@@ -1,30 +1,41 @@
 # FamilyPulse 🌿
 
-> **A privacy-first, zero-knowledge family wellness and identity platform built with C# 12 and .NET 8/9 Clean Architecture.**
+> **A privacy-first, zero-knowledge family wellness and systemic AI coaching platform built with C# 12 and .NET 8/9 Clean Architecture.**
 
-FamilyPulse provides a secure, anonymous space for families to perform weekly wellness check-ins, manage family roles, and receive streaming insights—without ever surrendering personal identifiable information (PII) to a centralized auth provider.
+FamilyPulse provides a secure, anonymous space for families to perform weekly wellness check-ins, manage family roles, and receive real-time streaming insights—without ever surrendering personal identifiable information (PII) to a centralized auth provider.
 
 ---
 
-## 🎥 60-Second Interactive Walkthrough
+## 🎥 3-Minute Interactive Walkthrough
 
-<!-- Drag and drop your 2.58-minute .mp4 recording directly here in the GitHub web editor -->
+https://github.com/user-attachments/assets/3e9ea4d5-1a13-4e51-8d73-ed6f47f5e910
 
 *Video walkthrough demonstrating one-click zero-knowledge family registration, check-in telemetry logging, member context switching, and live SSE AI coaching stream.*
 
 <details>
-<summary><strong>📸 Inspect Swagger API, Identity Workstation & Raw JSON Contracts</strong></summary>
+<summary><strong>📸 Inspect Showcase Dashboard, Identity Workstation, Swagger API & JSON Contracts</strong></summary>
 
 <br>
 
 ### 1. Interactive Showcase Dashboard (`/demo`)
-<!-- Drag and drop screenshot of demo.html showing member cards, check-in telemetry, and rendered Markdown diagnosis -->
+
+<img width="1019" height="708" alt="Screenshot From 2026-11-15 09-02-50" src="https://github.com/user-attachments/assets/af422154-04c6-4bab-9870-6d42c76f047f" />
+<br>
+<img width="1025" height="429" alt="Screenshot From 2026-11-15 08-55-48" src="https://github.com/user-attachments/assets/ea960bd9-8d5f-4414-898a-88c47a81855d" />
+<br>
+<img width="1019" height="708" alt="Screenshot From 2026-11-15 08-58-21" src="https://github.com/user-attachments/assets/43dac880-8e9e-4e38-bd56-7ac945110f4b" />
 
 ### 2. Identity Verification & Member Workstation (`/test`)
-<!-- Drag and drop screenshot of the /test console showing passphrase registration and member management -->
+
+<img width="844" height="440" alt="Screenshot From 2026-11-15 09-16-45" src="https://github.com/user-attachments/assets/9e106ddb-c0e7-40fe-906e-a1f24a2cb0b3" />
+<br>
+<img width="817" height="386" alt="Screenshot From 2026-11-15 09-36-21" src="https://github.com/user-attachments/assets/9eb6e9d0-a873-4ecd-9427-f0ee181110cd" />
+<br>
+<img width="889" height="503" alt="Screenshot From 2026-11-15 09-18-58" src="https://github.com/user-attachments/assets/07d70ddd-aec6-460e-8dea-c5688dee4098" />
 
 ### 3. OpenAPI / Swagger Endpoints (`/swagger`)
-<!-- Drag and drop screenshot of Swagger UI listing /api/identity/register, /api/checkins, /api/reports/annual-harmony, and SSE coaching stream -->
+
+<img width="1332" height="760" alt="Screenshot From 2026-11-15 09-24-49" src="https://github.com/user-attachments/assets/f4865087-6cbb-4029-82bf-1292ef39e5c3" />
 
 ### 4. Sample Cryptographic House Key & Telemetry Contracts
 ```json
@@ -39,6 +50,9 @@ FamilyPulse provides a secure, anonymous space for families to perform weekly we
   "note": "Worried about upcoming utility bills and school expenses.",
   "tags": ["budget", "overtime", "financial-stress"]
 }
+```
+
+</details>
 
 ---
 
@@ -48,11 +62,11 @@ FamilyPulse strictly adheres to **Clean Architecture** principles, maintaining c
 
 ```
                   ┌────────────────────────┐
-                  │    FamilyPulse.Api     │  (Minimal APIs, EndpointFilters, wwwroot)
+                  │    FamilyPulse.Api     │  (Minimal APIs, SSE Streaming, EndpointFilters, wwwroot)
                   └───────────┬────────────┘
                               │
                   ┌───────────▼────────────┐
-                  │ FamilyPulse.Application│  (Interfaces, Services, DTOs, Commands)
+                  │ FamilyPulse.Application│  (AI Coaching Orchestrator, Interfaces, Services, DTOs)
                   └───────────┬────────────┘
                               │
                   ┌───────────▼────────────┐
@@ -69,21 +83,25 @@ FamilyPulse strictly adheres to **Clean Architecture** principles, maintaining c
 ## 💡 Key Technical & Design Decisions
 
 ### 1. Zero-Knowledge Identity Model
-* **No Passwords or Emails**: Authenticates accounts using a **4-word deterministic passphrase** paired with a **Virtual Landmark ID**.
-* **PBKDF2 Hashing**: Identity hashes are computed deterministically via `Pbkdf2IdentityHasher` using 100,000 SHA-256 iterations and a server-side pepper, ensuring account verification occurs without storing readable credentials.
-* **Cryptographic House Key Export**: Families can export a portable, HMAC SHA-256 signed `family-key.json` file via `HouseKeyService` for zero-trust offline backup and instant single-click recovery.
+- **No Passwords or Emails**: Authenticates accounts using a **4-word deterministic passphrase** paired with a **Virtual Landmark ID**.
+- **PBKDF2 Hashing**: Identity hashes are computed deterministically via `Pbkdf2IdentityHasher` using 100,000 SHA-256 iterations and a server-side pepper, ensuring account verification occurs without storing readable credentials.
+- **Cryptographic House Key Export**: Families can export a portable, HMAC SHA-256 signed `family-key.json` file via `HouseKeyService` for zero-trust offline backup and instant single-click recovery.
 
-### 2. High-Performance Minimal APIs & Validation
-* Uses .NET Minimal APIs for ultra-low latency routing and reduced memory footprint.
-* Implements custom, reusable **native `EndpointFilters`** (e.g., `ValidationFilter<T>`) to validate incoming payloads before they hit application handlers.
+### 2. Systemic AI Coaching via Server-Sent Events (SSE)
+- **Context-Aware Prompt Orchestration**: Aggregates short-term member telemetry (stress, closeness, and energy ratings plus contextual `#tags`) alongside relational household roles to generate tailored systemic insights.
+- **Real-Time Token Streaming**: Streams LLM responses over native HTTP **Server-Sent Events (SSE)** directly to the client for low-latency, progressive Markdown rendering.
 
-### 3. Lightweight Persistence with EF Core & SQLite
-* Standardized on **SQLite** with EF Core to keep infrastructure self-contained, enabling rapid local development and low-cost cloud deployment with persistent storage volumes.
-* Robust migration lifecycle managed explicitly via EF Core CLI migrations.
+### 3. High-Performance Minimal APIs & Validation
+- Uses .NET Minimal APIs for ultra-low latency routing and reduced memory footprint.
+- Implements custom, reusable **native `EndpointFilters`** (e.g., `ValidationFilter<T>`) to validate incoming payloads before they hit application handlers.
 
-### 4. Comprehensive Testing Suite
-* Fully automated **xUnit** integration and unit test suite.
-* Exercises repository queries, cryptographic key generation, and identity matching using EF Core In-Memory providers.
+### 4. Lightweight Persistence with EF Core & SQLite
+- Standardized on **SQLite** with EF Core to keep infrastructure self-contained, enabling rapid local development, zero-config GitHub Codespaces execution, and persistent storage volumes.
+- Robust migration lifecycle managed explicitly via EF Core CLI migrations.
+
+### 5. Comprehensive Testing Suite
+- Fully automated **xUnit** integration and unit test suite.
+- Exercises repository queries, cryptographic key generation, and identity matching using EF Core In-Memory providers.
 
 ---
 
@@ -92,9 +110,9 @@ FamilyPulse strictly adheres to **Clean Architecture** principles, maintaining c
 ```
 src/
 ├── FamilyPulse.Domain/          # Core Domain Aggregate Roots (FamilyAccount, Member, Rating)
-├── FamilyPulse.Application/     # Application contracts, DTOs, and Service implementations
+├── FamilyPulse.Application/     # AI Orchestrator, Application contracts, DTOs, and Services
 ├── FamilyPulse.Infrastructure/  # DbContext, EF Configurations, Security & Crypto logic
-└── FamilyPulse.Api/             # API Endpoints, Middleware, Validation Filters & Vanilla JS Console
+└── FamilyPulse.Api/             # API Endpoints, SSE Streaming, Filters & wwwroot UIs
 tests/
 └── FamilyPulse.Tests/           # xUnit test suite for Domain, Identity, and Integration
 ```
@@ -104,18 +122,20 @@ tests/
 ## 🛠️ Getting Started
 
 ### Prerequisites
-* [.NET 8.0 SDK](https://dotnet.microsoft.com/download) or higher
-* EF Core CLI tool (`dotnet tool install --global dotnet-ef`)
+- [.NET 10.0 SDK](https://dotnet.microsoft.com/download) or higher
+- EF Core CLI tool (`dotnet tool install --global dotnet-ef`)
+- An LLM API key (Groq / OpenAI-compatible) configured via User Secrets or environment variables
 
 ### 1. Clone & Build
 ```bash
-git clone [https://github.com/your-username/FamilyPulse.git](https://github.com/your-username/FamilyPulse.git)
+git clone https://github.com/cdonkey/FamilyPulse.git
 cd FamilyPulse
 dotnet build
 ```
 
-### 2. Run Database Migrations
+### 2. Configure AI Secret & Run Database Migrations
 ```bash
+dotnet user-secrets set "AiProvider:ApiKey" "your-api-key-here" --project src/FamilyPulse.Api
 dotnet ef database update --project src/FamilyPulse.Infrastructure --startup-project src/FamilyPulse.Api
 ```
 
@@ -123,7 +143,10 @@ dotnet ef database update --project src/FamilyPulse.Infrastructure --startup-pro
 ```bash
 dotnet run --project src/FamilyPulse.Api
 ```
-Navigate to `http://localhost:5000` (or the configured HTTPS port) in your browser to access the built-in identity & member console.
+Navigate to `http://localhost:5000` in your browser to access:
+- **`/demo`** — Interactive AI Coaching Showcase Dashboard
+- **`/test`** — Identity Verification & Member Management Workstation
+- **`/swagger`** — Interactive OpenAPI Specification
 
 ### 4. Run Test Suite
 ```bash
@@ -139,8 +162,8 @@ I am actively building FamilyPulse as an open-source project and welcome contrib
 ### Current Roadmap
 - [x] Zero-knowledge registration & HMAC key export/recovery
 - [x] Family member CRUD operations with Clean Architecture
-- [ ] **Weekly Wellness Check-in Domain Engine** (Ratings, aggregate scores, trends)
-- [ ] **Real-time Coaching via SSE** (Server-Sent Events streaming AI wellness advice)
+- [x] **Weekly Wellness Check-in Domain Engine** (Ratings, aggregate scores, tags)
+- [x] **Real-time Coaching via SSE** (Server-Sent Events streaming AI wellness advice)
 - [ ] **Frontend Overhaul** (Looking for collaborators to build a modern React / Blazor / Tailwind UI)
 
 ---
