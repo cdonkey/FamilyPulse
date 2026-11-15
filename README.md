@@ -6,6 +6,42 @@ FamilyPulse provides a secure, anonymous space for families to perform weekly we
 
 ---
 
+## 🎥 60-Second Interactive Walkthrough
+
+<!-- Drag and drop your 2.58-minute .mp4 recording directly here in the GitHub web editor -->
+
+*Video walkthrough demonstrating one-click zero-knowledge family registration, check-in telemetry logging, member context switching, and live SSE AI coaching stream.*
+
+<details>
+<summary><strong>📸 Inspect Swagger API, Identity Workstation & Raw JSON Contracts</strong></summary>
+
+<br>
+
+### 1. Interactive Showcase Dashboard (`/demo`)
+<!-- Drag and drop screenshot of demo.html showing member cards, check-in telemetry, and rendered Markdown diagnosis -->
+
+### 2. Identity Verification & Member Workstation (`/test`)
+<!-- Drag and drop screenshot of the /test console showing passphrase registration and member management -->
+
+### 3. OpenAPI / Swagger Endpoints (`/swagger`)
+<!-- Drag and drop screenshot of Swagger UI listing /api/identity/register, /api/checkins, /api/reports/annual-harmony, and SSE coaching stream -->
+
+### 4. Sample Cryptographic House Key & Telemetry Contracts
+```json
+{
+  "familyAccountId": "53ac73e0-ef1f-4c16-a5a8-1bea95ecabec",
+  "memberId": "358b1d60-86a2-43cd-96e5-e7a94ad6e44e",
+  "type": "WeeklyRoutine",
+  "category": "Financial",
+  "stressLevel": 4,
+  "closenessLevel": 2,
+  "energyLevel": 2,
+  "note": "Worried about upcoming utility bills and school expenses.",
+  "tags": ["budget", "overtime", "financial-stress"]
+}
+
+---
+
 ## 🏛️ Architectural Overview
 
 FamilyPulse strictly adheres to **Clean Architecture** principles, maintaining clear separation of concerns, strict dependency inversion, and isolated domain logic.
